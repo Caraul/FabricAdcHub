@@ -1,11 +1,23 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.25123.0
+VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Core.UnitTests", "FabricAdcHub.Core.UnitTests\FabricAdcHub.Core.UnitTests.csproj", "{E05A3AFA-6A31-4A95-BBA3-7BC2BDCC2E57}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Core", "FabricAdcHub.Core\FabricAdcHub.Core.csproj", "{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}"
+EndProject
+Project("{A07B5EB6-E848-4116-A8D0-A826331D98C6}") = "FabricAdcHub.ServiceFabric", "FabricAdcHub.ServiceFabric\FabricAdcHub.ServiceFabric.sfproj", "{24C471AC-663A-406D-B841-49276EED49CE}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.User", "FabricAdcHub.User\FabricAdcHub.User.csproj", "{B8ECAEA4-96B4-4A6C-BEB9-717115AEF6C0}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.User.Interfaces", "FabricAdcHub.User.Interfaces\FabricAdcHub.User.Interfaces.csproj", "{14581F7B-7E08-4AFC-AB0F-82B33089F23B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.TcpServer", "FabricAdcHub.TcpServer\FabricAdcHub.TcpServer.csproj", "{A7AEB92C-97D9-410F-B9A7-588B9D5285D1}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Catalog", "FabricAdcHub.Catalog\FabricAdcHub.Catalog.csproj", "{4BBADF35-6679-4467-93E5-EC21A98227B6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Catalog.Interfaces", "FabricAdcHub.Catalog.Interfaces\FabricAdcHub.Catalog.Interfaces.csproj", "{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +33,32 @@ Global
 		{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}.Debug|x64.Build.0 = Debug|x64
 		{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}.Release|x64.ActiveCfg = Release|x64
 		{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}.Release|x64.Build.0 = Release|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Debug|x64.ActiveCfg = Debug|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Debug|x64.Build.0 = Debug|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Debug|x64.Deploy.0 = Debug|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Release|x64.ActiveCfg = Release|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Release|x64.Build.0 = Release|x64
+		{24C471AC-663A-406D-B841-49276EED49CE}.Release|x64.Deploy.0 = Release|x64
+		{B8ECAEA4-96B4-4A6C-BEB9-717115AEF6C0}.Debug|x64.ActiveCfg = Debug|x64
+		{B8ECAEA4-96B4-4A6C-BEB9-717115AEF6C0}.Debug|x64.Build.0 = Debug|x64
+		{B8ECAEA4-96B4-4A6C-BEB9-717115AEF6C0}.Release|x64.ActiveCfg = Release|x64
+		{B8ECAEA4-96B4-4A6C-BEB9-717115AEF6C0}.Release|x64.Build.0 = Release|x64
+		{14581F7B-7E08-4AFC-AB0F-82B33089F23B}.Debug|x64.ActiveCfg = Debug|x64
+		{14581F7B-7E08-4AFC-AB0F-82B33089F23B}.Debug|x64.Build.0 = Debug|x64
+		{14581F7B-7E08-4AFC-AB0F-82B33089F23B}.Release|x64.ActiveCfg = Release|x64
+		{14581F7B-7E08-4AFC-AB0F-82B33089F23B}.Release|x64.Build.0 = Release|x64
+		{A7AEB92C-97D9-410F-B9A7-588B9D5285D1}.Debug|x64.ActiveCfg = Debug|x64
+		{A7AEB92C-97D9-410F-B9A7-588B9D5285D1}.Debug|x64.Build.0 = Debug|x64
+		{A7AEB92C-97D9-410F-B9A7-588B9D5285D1}.Release|x64.ActiveCfg = Release|x64
+		{A7AEB92C-97D9-410F-B9A7-588B9D5285D1}.Release|x64.Build.0 = Release|x64
+		{4BBADF35-6679-4467-93E5-EC21A98227B6}.Debug|x64.ActiveCfg = Debug|x64
+		{4BBADF35-6679-4467-93E5-EC21A98227B6}.Debug|x64.Build.0 = Debug|x64
+		{4BBADF35-6679-4467-93E5-EC21A98227B6}.Release|x64.ActiveCfg = Release|x64
+		{4BBADF35-6679-4467-93E5-EC21A98227B6}.Release|x64.Build.0 = Release|x64
+		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Debug|x64.ActiveCfg = Debug|x64
+		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Debug|x64.Build.0 = Debug|x64
+		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Release|x64.ActiveCfg = Release|x64
+		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,10 +4,7 @@ namespace FabricAdcHub.Core.MessageTypes
 {
     public sealed class BroadcastMessageType : MessageTypeWithSid
     {
-        public override MessageTypeName MessageTypeName
-        {
-            get { return MessageTypeName.Broadcast; }
-        }
+        public override MessageTypeName MessageTypeName => MessageTypeName.Broadcast;
 
         public override int FromText(IList<string> parameters)
         {

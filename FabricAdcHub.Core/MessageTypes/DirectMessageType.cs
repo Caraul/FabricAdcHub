@@ -3,12 +3,9 @@ using FabricAdcHub.Core.Messages;
 
 namespace FabricAdcHub.Core.MessageTypes
 {
-    public sealed class DirectFromHubMessageType : MessageTypeWithSid
+    public sealed class DirectMessageType : MessageTypeWithSid
     {
-        public override MessageTypeName MessageTypeName
-        {
-            get { return MessageTypeName.DirectFromHub; }
-        }
+        public override MessageTypeName MessageTypeName => MessageTypeName.Direct;
 
         public string TargetSid { get; set; }
 

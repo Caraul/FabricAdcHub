@@ -5,10 +5,7 @@ namespace FabricAdcHub.Core.MessageTypes
 {
     public sealed class EchoMessageType : MessageTypeWithSid
     {
-        public override MessageTypeName MessageTypeName
-        {
-            get { return MessageTypeName.Echo; }
-        }
+        public override MessageTypeName MessageTypeName => MessageTypeName.Echo;
 
         public string TargetSid { get; set; }
 

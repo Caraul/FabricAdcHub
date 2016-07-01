@@ -20,7 +20,7 @@ namespace FabricAdcHub.Core.Messages
         public static readonly MessageName GetFileInformation = new MessageName("GFI");
         public static readonly MessageName Send = new MessageName("SND");
 
-        public string MessageNameText { get; set; }
+        public string MessageNameText { get; }
 
         public static MessageName FromText(string text)
         {

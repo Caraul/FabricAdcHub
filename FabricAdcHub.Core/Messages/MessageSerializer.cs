@@ -45,7 +45,7 @@ namespace FabricAdcHub.Core.Messages
         private static readonly Dictionary<char, Func<IList<string>, MessageType>> MessageTypeCreators = new Dictionary<char, Func<IList<string>, MessageType>>
         {
             { MessageTypeName.Broadcast.MessageTypeSymbol, messageType => new BroadcastMessageType() },
-            { MessageTypeName.DirectFromHub.MessageTypeSymbol, messageType => new DirectFromHubMessageType() },
+            { MessageTypeName.Direct.MessageTypeSymbol, messageType => new DirectMessageType() },
             { MessageTypeName.Echo.MessageTypeSymbol, messageType => new EchoMessageType() },
             { MessageTypeName.Information.MessageTypeSymbol, messageType => new InformationMessageType() },
             { MessageTypeName.FeatureBroadcast.MessageTypeSymbol, messageType => new FeatureBroadcastMessageType() },

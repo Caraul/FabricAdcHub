@@ -1,0 +1,40 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="FabricAdcHub.ServiceFabricType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
+   <Parameters>
+      <Parameter Name="Catalog_MinReplicaSetSize" DefaultValue="2" />
+      <Parameter Name="Catalog_PartitionCount" DefaultValue="1" />
+      <Parameter Name="Catalog_TargetReplicaSetSize" DefaultValue="3" />
+      <Parameter Name="TcpServer_InstanceCount" DefaultValue="-1" />
+      <Parameter Name="UserActorService_PartitionCount" DefaultValue="10" />
+      <Parameter Name="UserActorService_MinReplicaSetSize" DefaultValue="3" />
+      <Parameter Name="UserActorService_TargetReplicaSetSize" DefaultValue="3" />
+   </Parameters>
+   <ServiceManifestImport>
+      <ServiceManifestRef ServiceManifestName="FabricAdcHub.CatalogPkg" ServiceManifestVersion="1.0.0" />
+      <ConfigOverrides />
+   </ServiceManifestImport>
+   <ServiceManifestImport>
+      <ServiceManifestRef ServiceManifestName="FabricAdcHub.TcpServerPkg" ServiceManifestVersion="1.0.0" />
+      <ConfigOverrides />
+   </ServiceManifestImport>
+   <ServiceManifestImport>
+      <ServiceManifestRef ServiceManifestName="FabricAdcHub.UserPkg" ServiceManifestVersion="1.0.0" />
+   </ServiceManifestImport>
+   <DefaultServices>
+      <Service Name="Catalog">
+         <StatefulService ServiceTypeName="CatalogType" TargetReplicaSetSize="[Catalog_TargetReplicaSetSize]" MinReplicaSetSize="[Catalog_MinReplicaSetSize]">
+            <UniformInt64Partition PartitionCount="[Catalog_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+         </StatefulService>
+      </Service>
+      <Service Name="TcpServer">
+         <StatelessService ServiceTypeName="TcpServerType" InstanceCount="[TcpServer_InstanceCount]">
+            <SingletonPartition />
+         </StatelessService>
+      </Service>
+      <Service Name="UserActorService" GeneratedIdRef="70c90072-b8ad-4a17-84fe-f5aa5450a87d|Volatile">
+         <StatefulService ServiceTypeName="UserActorServiceType" TargetReplicaSetSize="[UserActorService_TargetReplicaSetSize]" MinReplicaSetSize="[UserActorService_MinReplicaSetSize]">
+            <UniformInt64Partition PartitionCount="[UserActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+         </StatefulService>
+      </Service>
+   </DefaultServices>
+</ApplicationManifest>

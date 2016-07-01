@@ -87,7 +87,7 @@
     <Compile Include="Messages\StatusMessage.cs" />
     <Compile Include="Messages\SupportsMessage.cs" />
     <Compile Include="MessageTypes\BroadcastMessageType.cs" />
-    <Compile Include="MessageTypes\DirectFromHubMessageType.cs" />
+    <Compile Include="MessageTypes\DirectMessageType.cs" />
     <Compile Include="MessageTypes\DirectTcpMessageType.cs" />
     <Compile Include="MessageTypes\DirectUdpMessageType.cs" />
     <Compile Include="MessageTypes\EchoMessageType.cs" />

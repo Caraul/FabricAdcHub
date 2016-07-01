@@ -12,10 +12,7 @@ namespace FabricAdcHub.Core.MessageTypes
             ExcludedFeatures = new List<string>();
         }
 
-        public override MessageTypeName MessageTypeName
-        {
-            get { return MessageTypeName.FeatureBroadcast; }
-        }
+        public override MessageTypeName MessageTypeName => MessageTypeName.FeatureBroadcast;
 
         public IList<string> RequiredFeatures { get; set; }
 

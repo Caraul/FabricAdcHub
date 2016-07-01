@@ -12,9 +12,9 @@ namespace FabricAdcHub.Core.Messages
             MessageName = messageName;
         }
 
-        public MessageType MessageType { get; set; }
+        public MessageType MessageType { get; }
 
-        public MessageName MessageName { get; set; }
+        public MessageName MessageName { get; }
 
         public abstract void FromText(IList<string> parameters);
 

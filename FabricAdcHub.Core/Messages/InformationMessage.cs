@@ -38,7 +38,7 @@ namespace FabricAdcHub.Core.Messages
 
         public NamedParameter<int> AutomaticSlotAllocatorSpeedLimit { get; set; }
 
-        public NamedParameter<int> MimimumSlots { get; set; }
+        public NamedParameter<int> MinimumSlots { get; set; }
 
         public NamedParameter<string> Email { get; set; }
 
@@ -78,7 +78,7 @@ namespace FabricAdcHub.Core.Messages
             MaximumDownloadSpeed = namedParameters.GetNamedInt("DS");
             MaximumSlots = namedParameters.GetNamedInt("SL");
             AutomaticSlotAllocatorSpeedLimit = namedParameters.GetNamedInt("AS");
-            MimimumSlots = namedParameters.GetNamedInt("AM");
+            MinimumSlots = namedParameters.GetNamedInt("AM");
             Email = namedParameters.GetNamedString("EM");
             Nickname = namedParameters.GetNamedString("NI");
             Description = namedParameters.GetNamedString("DE");
@@ -124,7 +124,7 @@ namespace FabricAdcHub.Core.Messages
             namedParameters.SetNamedInt("DS", MaximumDownloadSpeed);
             namedParameters.SetNamedInt("SL", MaximumSlots);
             namedParameters.SetNamedInt("AS", AutomaticSlotAllocatorSpeedLimit);
-            namedParameters.SetNamedInt("AM", MimimumSlots);
+            namedParameters.SetNamedInt("AM", MinimumSlots);
             namedParameters.SetNamedString("EM", Email);
             namedParameters.SetNamedString("NI", Nickname);
             namedParameters.SetNamedString("DE", Description);

@@ -22,28 +22,6 @@ namespace FabricAdcHub.Core.Messages
             }
         }
 
-        public static TValue? GetValueOrDefault<TValue>(NamedParameter<TValue> value, TValue? defaultValue)
-            where TValue : struct
-        {
-            if (value.IsUndefined)
-            {
-                return defaultValue;
-            }
-
-            return value.IsDropped ? (TValue?)null : value.Value;
-        }
-
-        public static TValue GetValueOrDefault<TValue>(NamedParameter<TValue> value, TValue defaultValue)
-            where TValue : class
-        {
-            if (value.IsUndefined)
-            {
-                return defaultValue;
-            }
-
-            return value.IsDropped ? null : value.Value;
-        }
-
         public NamedParameter<int> GetNamedInt(string name)
         {
             IList<string> value;

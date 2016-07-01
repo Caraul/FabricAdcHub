@@ -110,7 +110,7 @@ namespace FabricAdcHub.Core.Messages
             namedParameters.SetString("FB", InvalidInfField);
             namedParameters.SetString("I4", InvalidInfIpv4);
             namedParameters.SetString("I6", InvalidInfIpv6);
-            var codeText = string.Format("{0}{1}", Severity, Code);
+            var codeText = $"{Severity}{Code}";
             return BuildString(codeText, Description.Escape(), namedParameters.ToText());
         }
     }

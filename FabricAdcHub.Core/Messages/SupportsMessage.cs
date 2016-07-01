@@ -18,9 +18,9 @@ namespace FabricAdcHub.Core.Messages
             RemoveFeatures = new List<string>(removeFeatures);
         }
 
-        public IEnumerable<string> AddFeatures { get; private set; }
+        public IReadOnlyList<string> AddFeatures { get; private set; }
 
-        public IEnumerable<string> RemoveFeatures { get; private set; }
+        public IReadOnlyList<string> RemoveFeatures { get; private set; }
 
         public override void FromText(IList<string> parameters)
         {

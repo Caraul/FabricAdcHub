@@ -49,7 +49,6 @@
     <Rule Id="CA2202" Action="Error" />
     <Rule Id="CA2207" Action="Warning" />
     <Rule Id="CA2212" Action="Warning" />
-    <Rule Id="CA2213" Action="Warning" />
     <Rule Id="CA2214" Action="Warning" />
     <Rule Id="CA2216" Action="Warning" />
     <Rule Id="CA2220" Action="Warning" />
@@ -84,5 +83,8 @@
     <Rule Id="SX1101" Action="Warning" />
     <Rule Id="SX1309" Action="Warning" />
     <Rule Id="SX1309S" Action="Warning" />
+  </Rules>
+  <Rules AnalyzerId="System.Runtime.CSharp.Analyzers" RuleNamespace="System.Runtime.CSharp.Analyzers">
+    <Rule Id="CA2213" Action="None" />
   </Rules>
 </RuleSet>
