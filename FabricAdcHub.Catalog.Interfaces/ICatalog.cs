@@ -1,13 +1,13 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
-using FabricAdcHub.Core.Messages;
+using FabricAdcHub.Core.Commands;
 using Microsoft.ServiceFabric.Services.Remoting;
 
 namespace FabricAdcHub.Catalog.Interfaces
 {
     public interface ICatalog : IService
     {
-        Task UpdateSidInformation(string sid, InformationMessage information);
+        Task UpdateSidInformation(string sid, Information information);
 
         Task<string[]> GetAllSids();
 

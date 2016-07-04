@@ -2,8 +2,8 @@
 using System.Linq;
 using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
-using FabricAdcHub.Core.Messages;
-using FabricAdcHub.Core.MessageTypes;
+using FabricAdcHub.Core.Commands;
+using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.User.Interfaces;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -16,7 +16,7 @@ namespace FabricAdcHub.User.States
     {
         public abstract State State { get; }
 
-        public abstract Task<State> ProcessMessage(Message message);
+        public abstract Task<State> ProcessCommand(Command command);
 
         protected StateBase(User user)
         {
@@ -25,7 +25,7 @@ namespace FabricAdcHub.User.States
 
         protected User User { get; }
 
-        protected async Task BroadcastMessage(Message message)
+        protected async Task BroadcastCommand(Command message)
         {
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
             var allSids = await catalog.GetAllSids();
@@ -36,16 +36,16 @@ namespace FabricAdcHub.User.States
             }
         }
 
-        protected async Task DirectMessage(Message message)
+        protected async Task DirectCommand(Command message)
         {
-            var directMessageType = (DirectMessageType)message.MessageType;
+            var directMessageType = (DirectMessageHeader)message.Header;
             var user = ActorProxy.Create<IUser>(new ActorId(directMessageType.TargetSid));
             await user.SendMessage(message);
         }
 
-        protected async Task FeatureBroadcastMessage(Message message)
+        protected async Task FeatureBroadcastCommand(Command message)
         {
-            var featureMessageType = (FeatureBroadcastMessageType)message.MessageType;
+            var featureMessageType = (FeatureBroadcastMessageHeader)message.Header;
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
             var allSids = await (
                 featureMessageType.RequiredFeatures.Any() || featureMessageType.ExcludedFeatures.Any()

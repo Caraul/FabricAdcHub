@@ -1,6 +1,6 @@
 ﻿using System.Net;
 using System.Threading.Tasks;
-using FabricAdcHub.Core.Messages;
+using FabricAdcHub.Core.Commands;
 using Microsoft.ServiceFabric.Actors;
 
 namespace FabricAdcHub.User.Interfaces
@@ -11,7 +11,7 @@ namespace FabricAdcHub.User.Interfaces
 
         Task ProcessMessage(string message);
 
-        Task SendMessage(Message message);
+        Task SendMessage(Command message);
 
         Task SendSerializedMessage(string messageText);
     }

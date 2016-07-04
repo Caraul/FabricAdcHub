@@ -82,7 +82,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base32Tests.cs" />
-    <Compile Include="FeatureBroadcastMessageTypeTests.cs" />
+    <Compile Include="FeatureBroadcastMessageHeaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TigerTests.cs" />
     <Compile Include="TigerTreeHashTests.cs" />

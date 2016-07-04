@@ -4,7 +4,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
-using FabricAdcHub.Core.Messages;
+using FabricAdcHub.Core.Commands;
 using Microsoft.ServiceFabric.Data;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
@@ -20,7 +20,7 @@ namespace FabricAdcHub.Catalog
         {
         }
 
-        public async Task UpdateSidInformation(string sid, InformationMessage information)
+        public async Task UpdateSidInformation(string sid, Information information)
         {
             using (var tx = StateManager.CreateTransaction())
             {

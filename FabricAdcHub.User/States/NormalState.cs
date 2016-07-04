@@ -1,6 +1,6 @@
 ﻿using System.Threading.Tasks;
-using FabricAdcHub.Core.Messages;
-using FabricAdcHub.Core.MessageTypes;
+using FabricAdcHub.Core.Commands;
+using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.User.States
 {
@@ -13,40 +13,40 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Identify;
 
-        public override async Task<State> ProcessMessage(Message message)
+        public override async Task<State> ProcessCommand(Command command)
         {
-            if (message.MessageName == MessageName.Information)
+            if (command.Type == CommandType.Information)
             {
-                await User.UpdateInformation((InformationMessage)message);
+                await User.UpdateInformation((Information)command);
             }
 
-            if (message.MessageName == MessageName.Supports)
+            if (command.Type == CommandType.Supports)
             {
-                await User.UpdateInformation((SupportsMessage)message);
+                await User.UpdateInformation((Supports)command);
             }
 
-            if (message.MessageType.MessageTypeName == MessageTypeName.Broadcast)
+            if (command.Header is BroadcastMessageHeader)
             {
-                await BroadcastMessage(message);
+                await BroadcastCommand(command);
                 return State.Normal;
             }
 
-            if (message.MessageType.MessageTypeName == MessageTypeName.Direct)
+            if (command.Header is DirectTcpMessageHeader)
             {
-                await DirectMessage(message);
+                await DirectCommand(command);
                 return State.Normal;
             }
 
-            if (message.MessageType.MessageTypeName == MessageTypeName.Echo)
+            if (command.Header is EchoMessageHeader)
             {
-                await DirectMessage(message);
-                await User.SendMessage(message);
+                await DirectCommand(command);
+                await User.SendMessage(command);
                 return State.Normal;
             }
 
-            if (message.MessageType.MessageTypeName == MessageTypeName.FeatureBroadcast)
+            if (command.Header is FeatureBroadcastMessageHeader)
             {
-                await FeatureBroadcastMessage(message);
+                await FeatureBroadcastCommand(command);
                 return State.Normal;
             }
 

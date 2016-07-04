@@ -2,8 +2,9 @@
 using System.Net;
 using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
-using FabricAdcHub.Core.Messages;
-using FabricAdcHub.Core.MessageTypes;
+using FabricAdcHub.Core;
+using FabricAdcHub.Core.Commands;
+using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.User.Interfaces;
 using FabricAdcHub.User.States;
 using Microsoft.ServiceFabric.Actors.Runtime;
@@ -34,14 +35,14 @@ namespace FabricAdcHub.User
 
         public async Task ProcessMessage(string messageText)
         {
-            var message = MessageSerializer.FromText(messageText);
-            var informationMessage = message as InformationMessage;
-            if (informationMessage != null)
+            var command = MessageSerializer.FromText(messageText);
+            var information = command as Information;
+            if (information != null)
             {
-                EnrichInformationMessage(informationMessage);
+                EnrichInformationMessage(information);
             }
 
-            var newState = await _state.ProcessMessage(message);
+            var newState = await _state.ProcessCommand(command);
             if (newState != _state.State)
             {
                 await StateManager.SetStateAsync("state", newState);
@@ -49,7 +50,7 @@ namespace FabricAdcHub.User
             }
         }
 
-        public Task SendMessage(Message message)
+        public Task SendMessage(Command message)
         {
             return SendSerializedMessage(message.ToText());
         }
@@ -61,22 +62,22 @@ namespace FabricAdcHub.User
             return Task.CompletedTask;
         }
 
-        public async Task<string> UpdateInformation(InformationMessage message)
+        public async Task<string> UpdateInformation(Information message)
         {
             Information.UpdateFromMessage(message);
             await StateManager.SetStateAsync("information", Information);
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var storedMessage = Information.ToMessage(new BroadcastMessageType { Sid = Id.GetStringId() });
+            var storedMessage = Information.ToMessage(new BroadcastMessageHeader(Id.GetStringId()));
             await catalog.UpdateSidInformation(Id.GetStringId(), storedMessage);
             return storedMessage.ToText();
         }
 
-        public async Task UpdateInformation(SupportsMessage message)
+        public async Task UpdateInformation(Supports message)
         {
             Information.UpdateFromMessage(message);
             await StateManager.SetStateAsync("information", Information);
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var storedMessage = Information.ToMessage(new BroadcastMessageType { Sid = Id.GetStringId() });
+            var storedMessage = Information.ToMessage(new BroadcastMessageHeader(Id.GetStringId()));
             await catalog.UpdateSidInformation(Id.GetStringId(), storedMessage);
         }
 
@@ -118,16 +119,16 @@ namespace FabricAdcHub.User
             }
         }
 
-        private void EnrichInformationMessage(InformationMessage message)
+        private void EnrichInformationMessage(Information message)
         {
             if (message.IpAddressV4.IsDefined && message.IpAddressV4.Value == "0.0.0.0")
             {
-                message.IpAddressV4 = new NamedParameter<string>(ClientIPv4.ToString());
+                message.IpAddressV4 = new NamedFlag<string>(ClientIPv4.ToString());
             }
 
             if (message.IpAddressV6.IsDefined && message.IpAddressV6.Value == "::")
             {
-                message.IpAddressV6 = new NamedParameter<string>(ClientIPv6.ToString());
+                message.IpAddressV6 = new NamedFlag<string>(ClientIPv6.ToString());
             }
         }
 

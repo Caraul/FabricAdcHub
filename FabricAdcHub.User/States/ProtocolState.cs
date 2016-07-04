@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Threading.Tasks;
-using FabricAdcHub.Core.Messages;
-using FabricAdcHub.Core.MessageTypes;
+using FabricAdcHub.Core.Commands;
+using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.User.States
 {
@@ -14,22 +14,22 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Protocol;
 
-        public override Task<State> ProcessMessage(Message message)
+        public override Task<State> ProcessCommand(Command command)
         {
-            if (message.MessageName == MessageName.Supports)
+            if (command.Type == CommandType.Supports)
             {
-                return ProcessMessage((SupportsMessage)message);
+                return ProcessCommand((Supports)command);
             }
 
-            if (message.MessageName == MessageName.Status)
+            if (command.Type == CommandType.Status)
             {
-                return ProcessMessage((StatusMessage)message);
+                return ProcessCommand((Status)command);
             }
 
             throw new InvalidCommandException();
         }
 
-        private async Task<State> ProcessMessage(SupportsMessage message)
+        private async Task<State> ProcessCommand(Supports message)
         {
             var features = new[] { "BASE", "TIGR" };
             for (var index = 0; index != features.Length; index++)
@@ -42,28 +42,28 @@ namespace FabricAdcHub.User.States
                 }
             }
 
-            var supportsMessage = new SupportsMessage(InformationMessageType, features, Enumerable.Empty<string>());
+            var supportsMessage = new Supports(InformationMessageType, features, Enumerable.Empty<string>());
             await User.SendMessage(supportsMessage);
-            var sidMessage = new SidMessage(new InformationMessageType(), User.Id.GetStringId());
+            var sidMessage = new Sid(new InformationMessageHeader(), User.Id.GetStringId());
             await User.SendMessage(sidMessage);
             return State.Identify;
         }
 
-        private Task<State> ProcessMessage(StatusMessage message)
+        private Task<State> ProcessCommand(Status message)
         {
             return Task.FromResult(State);
         }
 
         private Task SendRequiredFeatureIsMissing(string featureName)
         {
-            var statusMessage = new StatusMessage(
+            var statusMessage = new Status(
                 InformationMessageType,
-                StatusMessage.ErrorSeverity.Fatal,
-                StatusMessage.ErrorCode.RequiredFeatureIsMissing,
+                Status.ErrorSeverity.Fatal,
+                Status.ErrorCode.RequiredFeatureIsMissing,
                 $"Feature {featureName} is required");
             return User.SendMessage(statusMessage);
         }
 
-        private static readonly InformationMessageType InformationMessageType = new InformationMessageType();
+        private static readonly InformationMessageHeader InformationMessageType = new InformationMessageHeader();
     }
 }

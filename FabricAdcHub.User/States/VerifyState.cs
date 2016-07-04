@@ -1,5 +1,5 @@
 ﻿using System.Threading.Tasks;
-using FabricAdcHub.Core.Messages;
+using FabricAdcHub.Core.Commands;
 
 namespace FabricAdcHub.User.States
 {
@@ -12,7 +12,7 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Verify;
 
-        public override Task<State> ProcessMessage(Message message)
+        public override Task<State> ProcessCommand(Command command)
         {
             return Task.FromResult(State);
         }
