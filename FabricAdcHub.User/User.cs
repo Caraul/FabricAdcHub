@@ -123,12 +123,12 @@ namespace FabricAdcHub.User
         {
             if (message.IpAddressV4.IsDefined && message.IpAddressV4.Value == "0.0.0.0")
             {
-                message.IpAddressV4 = new NamedFlag<string>(ClientIPv4.ToString());
+                message.IpAddressV4.Value = ClientIPv4.ToString();
             }
 
             if (message.IpAddressV6.IsDefined && message.IpAddressV6.Value == "::")
             {
-                message.IpAddressV6 = new NamedFlag<string>(ClientIPv6.ToString());
+                message.IpAddressV6.Value = ClientIPv6.ToString();
             }
         }
 

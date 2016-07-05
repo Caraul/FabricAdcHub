@@ -9,9 +9,9 @@ namespace FabricAdcHub.Core.Commands
         public Msg(MessageHeader header, IList<string> parameters)
             : this(header, parameters[0])
         {
-            var namedFlags = new NamedFlags(parameters.Skip(1));
-            GroupSid = namedFlags.GetString("PM");
-            AsMe = namedFlags.GetInt("ME");
+            new NamedFlags(parameters.Skip(1))
+                .Get(GroupSid)
+                .Get(AsMe);
         }
 
         public Msg(MessageHeader header, string text)
@@ -22,15 +22,15 @@ namespace FabricAdcHub.Core.Commands
 
         public string Text { get; }
 
-        public string GroupSid { get; set; }
+        public NamedFlag<string> GroupSid { get; } = new NamedFlag<string>("PM");
 
-        public int? AsMe { get; set; }
+        public NamedFlag<int> AsMe { get; } = new NamedFlag<int>("ME");
 
         protected override string GetParametersText()
         {
-            var namedFlags = new NamedFlags();
-            namedFlags.SetString("PM", GroupSid);
-            namedFlags.SetInt("ME", AsMe);
+            var namedFlags = new NamedFlags()
+                .Set(GroupSid)
+                .Set(AsMe);
             return BuildString(Text, namedFlags.ToText());
         }
     }

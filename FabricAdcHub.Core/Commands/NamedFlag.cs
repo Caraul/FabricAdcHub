@@ -2,40 +2,83 @@
 
 namespace FabricAdcHub.Core.Commands
 {
-    public struct NamedFlag<TValue>
+    public class NamedFlag<TValue>
     {
-        public NamedFlag(TValue value)
-            : this()
+        public NamedFlag(string name)
+            : this(name, NamedFlagState.Undefined)
         {
-            Value = value;
-            IsDefined = true;
         }
 
-        public TValue Value { get; }
-
-        public bool IsDefined { get; }
-
-        public bool IsDropped { get; private set; }
-
-        public bool IsUndefined => !IsDefined && !IsDropped;
-
-        public NamedFlag<TOutValue> ChangeType<TOutValue>(Func<TValue, TOutValue> transform)
+        public NamedFlag(string name, TValue value)
+            : this(name, NamedFlagState.Defined)
         {
-            if (IsUndefined)
-            {
-                return NamedFlag<TOutValue>.Undefined;
-            }
-
-            if (IsDropped)
-            {
-                return NamedFlag<TOutValue>.Dropped;
-            }
-
-            return new NamedFlag<TOutValue>(transform(Value));
+            _value = value;
         }
 
-        public static readonly NamedFlag<TValue> Undefined = default(NamedFlag<TValue>);
+        public string Name { get; }
 
-        public static readonly NamedFlag<TValue> Dropped = new NamedFlag<TValue> { IsDropped = true };
+        public TValue Value
+        {
+            get
+            {
+                return State != NamedFlagState.Defined ? default(TValue) : _value;
+            }
+
+            set
+            {
+                _value = value;
+                State = NamedFlagState.Defined;
+            }
+        }
+
+        public NamedFlagState State { get; set; }
+
+        public bool IsUndefined => State == NamedFlagState.Undefined;
+
+        public bool IsDropped => State == NamedFlagState.Dropped;
+
+        public bool IsDefined => State == NamedFlagState.Defined;
+
+        public static NamedFlag<TValue> Undefined(string name)
+        {
+            return new NamedFlag<TValue>(name, NamedFlagState.Undefined);
+        }
+
+        public static NamedFlag<TValue> Dropped(string name)
+        {
+            return new NamedFlag<TValue>(name, NamedFlagState.Dropped);
+        }
+
+        public void FromNullable<TOtherValue>(TOtherValue value) where TOtherValue : class
+        {
+            if (value == null)
+            {
+                State = NamedFlagState.Undefined;
+            }
+            else
+            {
+                Value = (TValue)Convert.ChangeType(value, typeof(TValue));
+            }
+        }
+
+        public void FromNullable<TOtherValue>(TOtherValue? value) where TOtherValue : struct
+        {
+            if (value == null)
+            {
+                State = NamedFlagState.Undefined;
+            }
+            else
+            {
+                Value = (TValue)Convert.ChangeType(value, typeof(TValue));
+            }
+        }
+
+        private NamedFlag(string name, NamedFlagState state)
+        {
+            Name = name;
+            State = state;
+        }
+
+        private TValue _value;
     }
 }

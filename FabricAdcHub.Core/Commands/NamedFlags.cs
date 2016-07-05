@@ -18,150 +18,94 @@ namespace FabricAdcHub.Core.Commands
                 var name = parameter.Substring(0, 2);
                 var value = parameter.Substring(2);
                 CreateParameter(name);
-                _parameters[name].Add(value);
+                if (!string.IsNullOrWhiteSpace(value))
+                {
+                    _parameters[name].Add(value);
+                }
             }
         }
 
-        public NamedFlag<int> GetNamedInt(string name)
+        public NamedFlags Get(NamedFlag<bool> flag)
         {
-            IList<string> value;
-            if (!_parameters.TryGetValue(name, out value))
+            Get(flag, _ => true);
+            return this;
+        }
+
+        public NamedFlags Get(NamedFlag<int> flag)
+        {
+            Get(flag, int.Parse);
+            return this;
+        }
+
+        public NamedFlags Get(NamedFlag<string> flag)
+        {
+            Get(flag, _ => _);
+            return this;
+        }
+
+        public NamedFlags Get(NamedFlag<Uri> flag)
+        {
+            Get(flag, value => new Uri(value));
+            return this;
+        }
+
+        public NamedFlags Get(NamedFlag<HashSet<string>> flag)
+        {
+            return InternalGetNamedFlag(flag, _ => _);
+        }
+
+        public NamedFlags Get<TValue>(NamedFlag<TValue> flag, Func<string, TValue> converter)
+        {
+            return InternalGetNamedFlag(flag, values => converter(values.Single()));
+        }
+
+        public NamedFlags Get<TValue>(NamedFlag<TValue> flag, Func<TValue> undefinedConverter, Func<TValue> droppedConverter, Func<string, TValue> valueConverter)
+        {
+            HashSet<string> value;
+            if (!_parameters.TryGetValue(flag.Name, out value))
             {
-                return NamedFlag<int>.Undefined;
+                flag.Value = undefinedConverter();
             }
-
-            var valueStr = value.Single();
-            return string.IsNullOrEmpty(valueStr)
-                ? NamedFlag<int>.Dropped
-                : new NamedFlag<int>(int.Parse(valueStr));
-        }
-
-        public NamedFlag<string> GetNamedString(string name)
-        {
-            IList<string> value;
-            if (!_parameters.TryGetValue(name, out value))
+            else
             {
-                return NamedFlag<string>.Undefined;
+                flag.Value = !value.Any() ? droppedConverter() : valueConverter(value.Single());
             }
 
-            var valueStr = value.Single();
-            return string.IsNullOrEmpty(valueStr)
-                ? NamedFlag<string>.Dropped
-                : new NamedFlag<string>(valueStr);
+            return this;
         }
 
-        public NamedFlag<IList<string>> GetNamedStrings(string name)
+        public NamedFlags Set(NamedFlag<bool> flag)
         {
-            IList<string> value;
-            if (!_parameters.TryGetValue(name, out value))
-            {
-                return NamedFlag<IList<string>>.Undefined;
-            }
-
-            var valueStr = value.First();
-            return string.IsNullOrEmpty(valueStr)
-                ? NamedFlag<IList<string>>.Dropped
-                : new NamedFlag<IList<string>>(value);
+            Set(flag, _ => "1");
+            return this;
         }
 
-        public void SetNamedInt(string name, NamedFlag<int> value)
+        public NamedFlags Set(NamedFlag<int> flag)
         {
-            if (!value.IsUndefined)
-            {
-                CreateParameter(name);
-                _parameters[name].Add(value.IsDropped ? string.Empty : value.Value.ToString(CultureInfo.InvariantCulture));
-            }
+            Set(flag, value => value.ToString(CultureInfo.InvariantCulture));
+            return this;
         }
 
-        public void SetNamedString(string name, NamedFlag<string> value)
+        public NamedFlags Set(NamedFlag<string> flag)
         {
-            if (!value.IsUndefined)
-            {
-                CreateParameter(name);
-                _parameters[name].Add(value.IsDropped ? string.Empty : value.Value);
-            }
+            Set(flag, _ => _);
+            return this;
         }
 
-        public void SetNamedStrings(string name, NamedFlag<IList<string>> value)
+        public NamedFlags Set(NamedFlag<Uri> flag)
         {
-            if (!value.IsUndefined && value.Value.Any())
-            {
-                CreateParameter(name);
-                _parameters[name] = value.IsDropped ? new[] { string.Empty }.ToList() : value.Value;
-            }
+            Set(flag, value => value.ToString());
+            return this;
         }
 
-        public bool? GetBool(string name)
+        public NamedFlags Set(NamedFlag<HashSet<string>> flag)
         {
-            return GetValue(name, value => value == "1");
+            return InternalSetNamedFlag(flag, _ => _);
         }
 
-        public int? GetInt(string name)
+        public NamedFlags Set<TValue>(NamedFlag<TValue> flag, Func<TValue, string> converter)
         {
-            return GetValue(name, int.Parse);
-        }
-
-        public string GetString(string name)
-        {
-            return GetValue(name, value => value);
-        }
-
-        public IList<string> GetStrings(string name)
-        {
-            return GetValues(name, value => value);
-        }
-
-        public TValue GetValue<TValue>(string name, Func<string, TValue> transform)
-        {
-            var namedParameter = GetNamedString(name);
-            return namedParameter.IsDefined ? transform(namedParameter.Value) : default(TValue);
-        }
-
-        public TValue GetValues<TValue>(string name, Func<IList<string>, TValue> transform)
-        {
-            var namedParameter = GetNamedStrings(name);
-            return namedParameter.IsDefined ? transform(namedParameter.Value) : default(TValue);
-        }
-
-        public void SetBool(string name, bool? value)
-        {
-            SetValue(name, value, boolValue => boolValue ? "1" : "0");
-        }
-
-        public void SetInt(string name, int? value)
-        {
-            SetValue(name, value, intValue => intValue.ToString(CultureInfo.InvariantCulture));
-        }
-
-        public void SetString(string name, string value)
-        {
-            SetValue(name, value, stringValue => stringValue);
-        }
-
-        public void SetStrings(string name, IList<string> value)
-        {
-            SetValue(name, value, stringValue => stringValue);
-        }
-
-        public void SetValue<TOutValue>(string name, TOutValue? value, Func<TOutValue, string> transform)
-            where TOutValue : struct
-        {
-            var namedParameter = value == null ? NamedFlag<string>.Undefined : new NamedFlag<string>(transform(value.Value));
-            SetNamedString(name, namedParameter);
-        }
-
-        public void SetValue<TOutValue>(string name, TOutValue value, Func<TOutValue, string> transform)
-            where TOutValue : class
-        {
-            var namedParameter = value == null ? NamedFlag<string>.Undefined : new NamedFlag<string>(transform(value));
-            SetNamedString(name, namedParameter);
-        }
-
-        public void SetValue<TOutValue>(string name, IList<TOutValue> value, Func<IList<TOutValue>, IList<string>> transform)
-            where TOutValue : class
-        {
-            var namedParameter = value == null || !value.Any() ? NamedFlag<IList<string>>.Undefined : new NamedFlag<IList<string>>(transform(value));
-            SetNamedStrings(name, namedParameter);
+            return InternalSetNamedFlag(flag, _ => new HashSet<string> { converter(flag.Value) });
         }
 
         public string ToText()
@@ -173,10 +117,46 @@ namespace FabricAdcHub.Core.Commands
         {
             if (!_parameters.ContainsKey(name))
             {
-                _parameters[name] = new List<string>();
+                _parameters[name] = new HashSet<string>();
             }
         }
 
-        private readonly Dictionary<string, IList<string>> _parameters = new Dictionary<string, IList<string>>();
+        private NamedFlags InternalGetNamedFlag<TValue>(NamedFlag<TValue> flag, Func<HashSet<string>, TValue> converter)
+        {
+            HashSet<string> value;
+            if (!_parameters.TryGetValue(flag.Name, out value))
+            {
+                flag.State = NamedFlagState.Undefined;
+            }
+            else
+            {
+                if (!value.Any())
+                {
+                    flag.State = NamedFlagState.Dropped;
+                }
+                else
+                {
+                    flag.Value = converter(value);
+                }
+            }
+
+            return this;
+        }
+
+        private NamedFlags InternalSetNamedFlag<TValue>(NamedFlag<TValue> flag, Func<TValue, HashSet<string>> converter)
+        {
+            if (flag.State != NamedFlagState.Undefined)
+            {
+                CreateParameter(flag.Name);
+                if (flag.State != NamedFlagState.Dropped)
+                {
+                    _parameters[flag.Name] = converter(flag.Value);
+                }
+            }
+
+            return this;
+        }
+
+        private readonly Dictionary<string, HashSet<string>> _parameters = new Dictionary<string, HashSet<string>>();
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
@@ -15,83 +14,83 @@ namespace FabricAdcHub.Core.Commands
         public Information(MessageHeader header, IList<string> parameters)
             : this(header)
         {
-            var namedFlags = new NamedFlags(parameters);
-            Cid = namedFlags.GetNamedString("ID");
-            Pid = namedFlags.GetNamedString("PD");
-            IpAddressV4 = namedFlags.GetNamedString("I4");
-            IpAddressV6 = namedFlags.GetNamedString("I6");
-            IpAddressV4Port = namedFlags.GetNamedInt("U4");
-            IpAddressV6Port = namedFlags.GetNamedInt("U6");
-            ShareSize = namedFlags.GetNamedInt("SS");
-            SharedFiles = namedFlags.GetNamedInt("SF");
-            AgentIdentifier = namedFlags.GetNamedString("VE");
-            MaximumUploadSpeed = namedFlags.GetNamedInt("US");
-            MaximumDownloadSpeed = namedFlags.GetNamedInt("DS");
-            MaximumSlots = namedFlags.GetNamedInt("SL");
-            AutomaticSlotAllocatorSpeedLimit = namedFlags.GetNamedInt("AS");
-            MinimumSlots = namedFlags.GetNamedInt("AM");
-            Email = namedFlags.GetNamedString("EM");
-            Nickname = namedFlags.GetNamedString("NI");
-            Description = namedFlags.GetNamedString("DE");
-            HubsAsRegularUser = namedFlags.GetNamedInt("HN");
-            HubsAsRegisteredUser = namedFlags.GetNamedInt("HR");
-            HubsAsOperator = namedFlags.GetNamedInt("HO");
-            Token = namedFlags.GetNamedString("TO");
-            ClientType = namedFlags.GetNamedInt("CT").ChangeType(value => (ClientTypes)value);
-            Away = namedFlags.GetNamedInt("AW");
-            Features = namedFlags.GetNamedString("SU").ChangeType(value => (IList<string>)value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).ToList());
-            Referrer = namedFlags.GetNamedString("RF").ChangeType(value => new Uri(value));
+            new NamedFlags(parameters)
+                .Get(Cid)
+                .Get(Pid)
+                .Get(IpAddressV4)
+                .Get(IpAddressV6)
+                .Get(IpAddressV4Port)
+                .Get(IpAddressV6Port)
+                .Get(ShareSize)
+                .Get(SharedFiles)
+                .Get(AgentIdentifier)
+                .Get(MaximumUploadSpeed)
+                .Get(MaximumDownloadSpeed)
+                .Get(MaximumSlots)
+                .Get(AutomaticSlotAllocatorSpeedLimit)
+                .Get(MinimumSlots)
+                .Get(Email)
+                .Get(Nickname)
+                .Get(Description)
+                .Get(HubsAsRegularUser)
+                .Get(HubsAsRegisteredUser)
+                .Get(HubsAsOperator)
+                .Get(Token)
+                .Get(ClientType, () => ClientTypes.Bot, () => ClientTypes.Bot, value => (ClientTypes)int.Parse(value))
+                .Get(Away, value => (AwayState)int.Parse(value))
+                .Get(Features, value => new HashSet<string>(value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
+                .Get(Referrer);
         }
 
-        public NamedFlag<string> Cid { get; set; }
+        public NamedFlag<string> Cid { get; } = new NamedFlag<string>("ID");
 
-        public NamedFlag<string> Pid { get; set; }
+        public NamedFlag<string> Pid { get; } = new NamedFlag<string>("PD");
 
-        public NamedFlag<string> IpAddressV4 { get; set; }
+        public NamedFlag<string> IpAddressV4 { get; } = new NamedFlag<string>("I4");
 
-        public NamedFlag<string> IpAddressV6 { get; set; }
+        public NamedFlag<string> IpAddressV6 { get; } = new NamedFlag<string>("I6");
 
-        public NamedFlag<int> IpAddressV4Port { get; set; }
+        public NamedFlag<int> IpAddressV4Port { get; } = new NamedFlag<int>("U4");
 
-        public NamedFlag<int> IpAddressV6Port { get; set; }
+        public NamedFlag<int> IpAddressV6Port { get; } = new NamedFlag<int>("U6");
 
-        public NamedFlag<int> ShareSize { get; set; }
+        public NamedFlag<int> ShareSize { get; } = new NamedFlag<int>("SS");
 
-        public NamedFlag<int> SharedFiles { get; set; }
+        public NamedFlag<int> SharedFiles { get; } = new NamedFlag<int>("SF");
 
-        public NamedFlag<string> AgentIdentifier { get; set; }
+        public NamedFlag<string> AgentIdentifier { get; } = new NamedFlag<string>("VE");
 
-        public NamedFlag<int> MaximumUploadSpeed { get; set; }
+        public NamedFlag<int> MaximumUploadSpeed { get; } = new NamedFlag<int>("US");
 
-        public NamedFlag<int> MaximumDownloadSpeed { get; set; }
+        public NamedFlag<int> MaximumDownloadSpeed { get; } = new NamedFlag<int>("DS");
 
-        public NamedFlag<int> MaximumSlots { get; set; }
+        public NamedFlag<int> MaximumSlots { get; } = new NamedFlag<int>("SL");
 
-        public NamedFlag<int> AutomaticSlotAllocatorSpeedLimit { get; set; }
+        public NamedFlag<int> AutomaticSlotAllocatorSpeedLimit { get; } = new NamedFlag<int>("AS");
 
-        public NamedFlag<int> MinimumSlots { get; set; }
+        public NamedFlag<int> MinimumSlots { get; } = new NamedFlag<int>("AM");
 
-        public NamedFlag<string> Email { get; set; }
+        public NamedFlag<string> Email { get; } = new NamedFlag<string>("EM");
 
-        public NamedFlag<string> Nickname { get; set; }
+        public NamedFlag<string> Nickname { get; } = new NamedFlag<string>("NI");
 
-        public NamedFlag<string> Description { get; set; }
+        public NamedFlag<string> Description { get; } = new NamedFlag<string>("DE");
 
-        public NamedFlag<int> HubsAsRegularUser { get; set; }
+        public NamedFlag<int> HubsAsRegularUser { get; } = new NamedFlag<int>("HN");
 
-        public NamedFlag<int> HubsAsRegisteredUser { get; set; }
+        public NamedFlag<int> HubsAsRegisteredUser { get; } = new NamedFlag<int>("HR");
 
-        public NamedFlag<int> HubsAsOperator { get; set; }
+        public NamedFlag<int> HubsAsOperator { get; } = new NamedFlag<int>("HO");
 
-        public NamedFlag<string> Token { get; set; }
+        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
 
-        public NamedFlag<ClientTypes> ClientType { get; set; }
+        public NamedFlag<ClientTypes> ClientType { get; } = new NamedFlag<ClientTypes>("CT");
 
-        public NamedFlag<int> Away { get; set; }
+        public NamedFlag<AwayState> Away { get; } = new NamedFlag<AwayState>("AW");
 
-        public NamedFlag<IList<string>> Features { get; set; }
+        public NamedFlag<HashSet<string>> Features { get; } = new NamedFlag<HashSet<string>>("SU");
 
-        public NamedFlag<Uri> Referrer { get; set; }
+        public NamedFlag<Uri> Referrer { get; } = new NamedFlag<Uri>("RF");
 
         public enum ClientTypes
         {
@@ -111,32 +110,32 @@ namespace FabricAdcHub.Core.Commands
 
         protected override string GetParametersText()
         {
-            var namedFlags = new NamedFlags();
-            namedFlags.SetNamedString("ID", Cid);
-            namedFlags.SetNamedString("PD", Pid);
-            namedFlags.SetNamedString("I4", IpAddressV4);
-            namedFlags.SetNamedString("I6", IpAddressV6);
-            namedFlags.SetNamedInt("U4", IpAddressV4Port);
-            namedFlags.SetNamedInt("U6", IpAddressV6Port);
-            namedFlags.SetNamedInt("SS", ShareSize);
-            namedFlags.SetNamedInt("SF", SharedFiles);
-            namedFlags.SetNamedString("VE", AgentIdentifier);
-            namedFlags.SetNamedInt("US", MaximumUploadSpeed);
-            namedFlags.SetNamedInt("DS", MaximumDownloadSpeed);
-            namedFlags.SetNamedInt("SL", MaximumSlots);
-            namedFlags.SetNamedInt("AS", AutomaticSlotAllocatorSpeedLimit);
-            namedFlags.SetNamedInt("AM", MinimumSlots);
-            namedFlags.SetNamedString("EM", Email);
-            namedFlags.SetNamedString("NI", Nickname);
-            namedFlags.SetNamedString("DE", Description);
-            namedFlags.SetNamedInt("HN", HubsAsRegularUser);
-            namedFlags.SetNamedInt("HR", HubsAsRegisteredUser);
-            namedFlags.SetNamedInt("HO", HubsAsOperator);
-            namedFlags.SetNamedString("TO", Token);
-            namedFlags.SetNamedInt("CT", ClientType.ChangeType(value => (int)value));
-            namedFlags.SetNamedInt("AW", Away);
-            namedFlags.SetNamedString("SU", Features.ChangeType(features => string.Join(",", Features)));
-            namedFlags.SetNamedString("RF", Referrer.ChangeType(referrer => Referrer.ToString()));
+            var namedFlags = new NamedFlags()
+                .Set(Cid)
+                .Set(Pid)
+                .Set(IpAddressV4)
+                .Set(IpAddressV6)
+                .Set(IpAddressV4Port)
+                .Set(IpAddressV6Port)
+                .Set(ShareSize)
+                .Set(SharedFiles)
+                .Set(AgentIdentifier)
+                .Set(MaximumUploadSpeed)
+                .Set(MaximumDownloadSpeed)
+                .Set(MaximumSlots)
+                .Set(AutomaticSlotAllocatorSpeedLimit)
+                .Set(MinimumSlots)
+                .Set(Email)
+                .Set(Nickname)
+                .Set(Description)
+                .Set(HubsAsRegularUser)
+                .Set(HubsAsRegisteredUser)
+                .Set(HubsAsOperator)
+                .Set(Token)
+                .Set(ClientType, value => value.ToString())
+                .Set(Away, value => value == AwayState.Away ? "1" : "2")
+                .Set(Features, features => string.Join(",", Features))
+                .Set(Referrer);
             return namedFlags.ToText();
         }
     }

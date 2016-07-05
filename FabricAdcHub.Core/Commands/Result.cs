@@ -13,32 +13,32 @@ namespace FabricAdcHub.Core.Commands
         public Result(MessageHeader header, IList<string> parameters)
             : this(header)
         {
-            var namedFlags = new NamedFlags(parameters);
-            FullFilename = namedFlags.GetString("FN");
-            Size = namedFlags.GetInt("SI");
-            AvailableSlots = namedFlags.GetInt("SL");
-            Token = namedFlags.GetString("TO");
-            Tth = namedFlags.GetString("TR");
+            new NamedFlags(parameters)
+                .Get(FullFilename)
+                .Get(Size)
+                .Get(AvailableSlots)
+                .Get(Token)
+                .Get(Tth);
         }
 
-        public string FullFilename { get; set; }
+        public NamedFlag<string> FullFilename { get; } = new NamedFlag<string>("FN");
 
-        public int? Size { get; set; }
+        public NamedFlag<int> Size { get; } = new NamedFlag<int>("SI");
 
-        public int? AvailableSlots { get; set; }
+        public NamedFlag<int> AvailableSlots { get; } = new NamedFlag<int>("SL");
 
-        public string Token { get; set; }
+        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
 
-        public string Tth { get; set; }
+        public NamedFlag<string> Tth { get; } = new NamedFlag<string>("TR");
 
         protected override string GetParametersText()
         {
-            var namedFlags = new NamedFlags();
-            namedFlags.SetString("FN", FullFilename);
-            namedFlags.SetInt("SI", Size);
-            namedFlags.SetInt("SL", AvailableSlots);
-            namedFlags.SetString("TO", Token);
-            namedFlags.SetString("TR", Tth);
+            var namedFlags = new NamedFlags()
+                .Set(FullFilename)
+                .Set(Size)
+                .Set(AvailableSlots)
+                .Set(Token)
+                .Set(Tth);
             return BuildString(namedFlags.ToText());
         }
     }

@@ -16,7 +16,7 @@ namespace FabricAdcHub.Core.Commands
                   int.Parse(parameters[3]))
         {
             var namedFlags = new NamedFlags(parameters.Skip(4));
-            IsRecursive = namedFlags.GetBool("RE");
+            namedFlags.Get(IsRecursive);
         }
 
         public Get(MessageHeader header, ItemType getItemType, string identifier, int startAt, int byteCount)
@@ -36,7 +36,7 @@ namespace FabricAdcHub.Core.Commands
 
         public int ByteCount { get; }
 
-        public bool? IsRecursive { get; set; }
+        public NamedFlag<bool> IsRecursive { get; } = new NamedFlag<bool>("RE");
 
         public enum ItemType
         {
@@ -49,7 +49,7 @@ namespace FabricAdcHub.Core.Commands
         {
             var getItemType = GetItemType == ItemType.File ? "file" : (GetItemType == ItemType.FileList ? "list" : "tthl");
             var namedFlags = new NamedFlags();
-            namedFlags.SetBool("RE", IsRecursive);
+            namedFlags.Set(IsRecursive);
             return BuildString(getItemType, Identifier, StartAt.ToString(CultureInfo.InvariantCulture), ByteCount.ToString(CultureInfo.InvariantCulture), namedFlags.ToText());
         }
     }

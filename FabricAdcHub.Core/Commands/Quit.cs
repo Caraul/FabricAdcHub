@@ -10,12 +10,12 @@ namespace FabricAdcHub.Core.Commands
         public Quit(MessageHeader header, IList<string> parameters)
             : this(header, parameters[0])
         {
-            var namedFlags = new NamedFlags(parameters.Skip(1));
-            InitiatorSid = namedFlags.GetString("ID");
-            SecondsUntilReconnectIsAllowed = namedFlags.GetInt("TL");
-            Message = namedFlags.GetString("MS");
-            RedirectTo = namedFlags.GetValue("RD", value => new Uri(value));
-            DisconnectAll = namedFlags.GetBool("DI");
+            new NamedFlags(parameters.Skip(1))
+                .Get(InitiatorSid)
+                .Get(SecondsUntilReconnectIsAllowed)
+                .Get(Message)
+                .Get(RedirectTo)
+                .Get(DisconnectAll);
         }
 
         public Quit(MessageHeader header, string sid)
@@ -26,24 +26,24 @@ namespace FabricAdcHub.Core.Commands
 
         public string Sid { get; }
 
-        public string InitiatorSid { get; set; }
+        public NamedFlag<string> InitiatorSid { get; } = new NamedFlag<string>("ID");
 
-        public int? SecondsUntilReconnectIsAllowed { get; set; }
+        public NamedFlag<int> SecondsUntilReconnectIsAllowed { get; } = new NamedFlag<int>("TL");
 
-        public string Message { get; set; }
+        public NamedFlag<string> Message { get; } = new NamedFlag<string>("MS");
 
-        public Uri RedirectTo { get; set; }
+        public NamedFlag<Uri> RedirectTo { get; } = new NamedFlag<Uri>("RD");
 
-        public bool? DisconnectAll { get; set; }
+        public NamedFlag<bool> DisconnectAll { get; } = new NamedFlag<bool>("DI");
 
         protected override string GetParametersText()
         {
-            var namedFlags = new NamedFlags();
-            namedFlags.SetString("ID", InitiatorSid);
-            namedFlags.SetInt("TL", SecondsUntilReconnectIsAllowed);
-            namedFlags.SetString("MS", Message);
-            namedFlags.SetValue("RD", RedirectTo, value => value.ToString());
-            namedFlags.SetBool("DI", DisconnectAll);
+            var namedFlags = new NamedFlags()
+                .Set(InitiatorSid)
+                .Set(SecondsUntilReconnectIsAllowed)
+                .Set(Message)
+                .Set(RedirectTo)
+                .Set(DisconnectAll);
 
             return BuildString(Sid, namedFlags.ToText());
         }

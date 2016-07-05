@@ -60,13 +60,12 @@ namespace FabricAdcHub.User.States
 
         private static Information CreateHubInformation()
         {
-            return new Information(InformationType)
-            {
-                ClientType = new NamedFlag<Information.ClientTypes>(Information.ClientTypes.Hub),
-                Nickname = new NamedFlag<string>("ServiceFabricAdcHub"),
-                Description = new NamedFlag<string>("Service Fabric ADC Hub"),
-                Features = new NamedFlag<IList<string>>(new[] { "BASE", "TIGR" })
-            };
+            var information = new Information(InformationType);
+            information.ClientType.Value = Information.ClientTypes.Hub;
+            information.Nickname.Value = "ServiceFabricAdcHub";
+            information.Description.Value = "Service Fabric ADC Hub";
+            information.Features.Value = new HashSet<string> { "BASE", "TIGR" };
+            return information;
         }
 
         private async Task<bool> CheckClientInformation(Information message)
@@ -114,10 +113,8 @@ namespace FabricAdcHub.User.States
                 InformationType,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.RequiredInfFieldIsMissingOrBad,
-                $"Field {fieldName} is required")
-            {
-                MissingInfField = fieldName
-            };
+                $"Field {fieldName} is required");
+            statusMessage.MissingInfField.Value = fieldName;
             return User.SendMessage(statusMessage);
         }
 

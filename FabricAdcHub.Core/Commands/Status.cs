@@ -14,15 +14,15 @@ namespace FabricAdcHub.Core.Commands
                   (ErrorCode)int.Parse(parameters[0].Substring(1, 2)),
                   parameters[1].Unescape())
         {
-            var namedFlags = new NamedFlags(parameters.Skip(2));
-            OffendingMessageOrMissingFeature = namedFlags.GetString("FC");
-            SecondsUntilEndOfBan = namedFlags.GetInt("TL");
-            Token = namedFlags.GetString("TO");
-            Protocol = namedFlags.GetString("PR");
-            MissingInfField = namedFlags.GetString("FM");
-            InvalidInfField = namedFlags.GetString("FB");
-            InvalidInfIpv4 = namedFlags.GetString("I4");
-            InvalidInfIpv6 = namedFlags.GetString("I6");
+            new NamedFlags(parameters.Skip(2))
+                .Get(OffendingMessageOrMissingFeature)
+                .Get(SecondsUntilEndOfBan)
+                .Get(Token)
+                .Get(Protocol)
+                .Get(MissingInfField)
+                .Get(InvalidInfField)
+                .Get(InvalidInfIpv4)
+                .Get(InvalidInfIpv6);
         }
 
         public Status(MessageHeader header, ErrorSeverity errorSeverity, ErrorCode errorCode, string description)
@@ -39,21 +39,21 @@ namespace FabricAdcHub.Core.Commands
 
         public string Description { get; }
 
-        public string OffendingMessageOrMissingFeature { get; set; }
+        public NamedFlag<string> OffendingMessageOrMissingFeature { get; } = new NamedFlag<string>("FC");
 
-        public int? SecondsUntilEndOfBan { get; set; }
+        public NamedFlag<int> SecondsUntilEndOfBan { get; } = new NamedFlag<int>("TL");
 
-        public string Token { get; set; }
+        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
 
-        public string Protocol { get; set; }
+        public NamedFlag<string> Protocol { get; } = new NamedFlag<string>("PR");
 
-        public string MissingInfField { get; set; }
+        public NamedFlag<string> MissingInfField { get; } = new NamedFlag<string>("FM");
 
-        public string InvalidInfField { get; set; }
+        public NamedFlag<string> InvalidInfField { get; } = new NamedFlag<string>("FB");
 
-        public string InvalidInfIpv4 { get; set; }
+        public NamedFlag<string> InvalidInfIpv4 { get; } = new NamedFlag<string>("I4");
 
-        public string InvalidInfIpv6 { get; set; }
+        public NamedFlag<string> InvalidInfIpv6 { get; } = new NamedFlag<string>("I6");
 
         public enum ErrorSeverity
         {
@@ -96,15 +96,15 @@ namespace FabricAdcHub.Core.Commands
 
         protected override string GetParametersText()
         {
-            var namedFlags = new NamedFlags();
-            namedFlags.SetString("FC", OffendingMessageOrMissingFeature);
-            namedFlags.SetInt("TL", SecondsUntilEndOfBan);
-            namedFlags.SetString("TO", Token);
-            namedFlags.SetString("PR", Protocol);
-            namedFlags.SetString("FM", MissingInfField);
-            namedFlags.SetString("FB", InvalidInfField);
-            namedFlags.SetString("I4", InvalidInfIpv4);
-            namedFlags.SetString("I6", InvalidInfIpv6);
+            var namedFlags = new NamedFlags()
+                .Set(OffendingMessageOrMissingFeature)
+                .Set(SecondsUntilEndOfBan)
+                .Set(Token)
+                .Set(Protocol)
+                .Set(MissingInfField)
+                .Set(InvalidInfField)
+                .Set(InvalidInfIpv4)
+                .Set(InvalidInfIpv6);
             var codeText = $"{Severity}{Code}";
             return BuildString(codeText, Description.Escape(), namedFlags.ToText());
         }

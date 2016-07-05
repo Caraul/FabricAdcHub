@@ -73,6 +73,7 @@
     <Compile Include="Commands\Information.cs" />
     <Compile Include="Commands\Command.cs" />
     <Compile Include="Commands\CommandType.cs" />
+    <Compile Include="Commands\NamedFlagState.cs" />
     <Compile Include="MessageSerializer.cs" />
     <Compile Include="Commands\Msg.cs" />
     <Compile Include="Commands\NamedFlag.cs" />
