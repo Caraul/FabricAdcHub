@@ -22,40 +22,47 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Identify;
 
+        public override bool IsSendCommandAllowed(Command command)
+        {
+            return command.Type == CommandType.Status
+                || command.Type == CommandType.Information
+                || command.Type == CommandType.Quit;
+        }
+
         public override Task<State> ProcessCommand(Command command)
         {
             if (command.Type == CommandType.Information)
             {
-                return ProcessCommand((Information)command);
+                return ProcessInformation((Information)command);
             }
 
             if (command.Type == CommandType.Status)
             {
-                return ProcessCommand((Status)command);
+                return ProcessStatus((Status)command);
             }
 
             throw new InvalidCommandException();
         }
 
-        private async Task<State> ProcessCommand(Information message)
+        private async Task<State> ProcessInformation(Information command)
         {
-            if (!await CheckClientInformation(message))
+            if (!await CheckClientInformation(command))
             {
                 return State;
             }
 
-            var userInformation = await User.UpdateInformation(message);
+            await User.UpdateInformation(command);
             var hubInformation = CreateHubInformation();
-            await User.SendMessage(hubInformation);
+            await User.SendCommand(hubInformation);
 
-            await BroadcastAllUsersInformation(userInformation);
+            await BroadcastAllUsersInformation();
 
             return State.Normal;
         }
 
-        private Task<State> ProcessCommand(Status message)
+        private Task<State> ProcessStatus(Status command)
         {
-            return Task.FromResult(State);
+            return Task.FromResult(command.Severity == Status.ErrorSeverity.Fatal ? State.DisconnectedOnProtocolError : State);
         }
 
         private static Information CreateHubInformation()
@@ -68,22 +75,22 @@ namespace FabricAdcHub.User.States
             return information;
         }
 
-        private async Task<bool> CheckClientInformation(Information message)
+        private async Task<bool> CheckClientInformation(Information command)
         {
-            if (!message.Pid.IsDefined)
+            if (!command.Pid.IsDefined)
             {
                 await SendRequiredFieldIsMissing("PD");
                 return false;
             }
 
-            if (!message.Cid.IsDefined)
+            if (!command.Cid.IsDefined)
             {
                 await SendRequiredFieldIsMissing("ID");
                 return false;
             }
 
-            var cid = AdcBase32Encoder.Decode(message.Cid.Value);
-            var pid = AdcBase32Encoder.Decode(message.Pid.Value);
+            var cid = AdcBase32Encoder.Decode(command.Cid.Value);
+            var pid = AdcBase32Encoder.Decode(command.Pid.Value);
             var hash = new TigerHash().ComputeHash(pid);
             if (!hash.SequenceEqual(cid))
             {
@@ -91,13 +98,13 @@ namespace FabricAdcHub.User.States
                 return false;
             }
 
-            if (!message.IpAddressV4.IsDefined)
+            if (!command.IpAddressV4.IsDefined)
             {
                 await SendRequiredFieldIsMissing("I4");
                 return false;
             }
 
-            if (message.IpAddressV4.Value != User.ClientIPv4.ToString())
+            if (command.IpAddressV4.Value != User.ClientIPv4.ToString())
             {
                 await SendInvalidIPv4();
                 return false;
@@ -115,45 +122,33 @@ namespace FabricAdcHub.User.States
                 Status.ErrorCode.RequiredInfFieldIsMissingOrBad,
                 $"Field {fieldName} is required");
             statusMessage.MissingInfField.Value = fieldName;
-            return User.SendMessage(statusMessage);
+            return User.SendCommand(statusMessage);
         }
 
         private Task SendInvalidPid()
         {
-            var statusMessage = new Status(
+            var status = new Status(
                 InformationType,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.InvalidPidSupplied,
                 string.Empty);
-            return User.SendMessage(statusMessage);
+            return User.SendCommand(status);
         }
 
         private Task SendInvalidIPv4()
         {
-            var statusMessage = new Status(
+            var status = new Status(
                 InformationType,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.InvalidIp,
                 string.Empty);
-            return User.SendMessage(statusMessage);
+            return User.SendCommand(status);
         }
 
-        private async Task BroadcastAllUsersInformation(string newUserInformation)
+        private async Task BroadcastAllUsersInformation()
         {
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var allSidsInfo = await catalog.GetAllSidsInformation();
-            for (var index = 0; index != allSidsInfo.Length; index++)
-            {
-                await User.SendSerializedMessage(allSidsInfo[index].Information);
-            }
-
-            for (var index = 0; index != allSidsInfo.Length; index++)
-            {
-                var user = ActorProxy.Create<IUser>(new ActorId(allSidsInfo[index].Sid));
-                await user.SendSerializedMessage(newUserInformation);
-            }
-
-            await User.SendSerializedMessage(newUserInformation);
+            await catalog.BroadcastSidInformation(User.Sid);
         }
 
         private static readonly InformationMessageHeader InformationType = new InformationMessageHeader();

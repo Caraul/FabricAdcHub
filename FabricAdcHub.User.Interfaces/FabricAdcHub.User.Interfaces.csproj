@@ -72,6 +72,7 @@
     <Reference Include="System.Runtime.Serialization" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="DisconnectReason.cs" />
     <Compile Include="IUserEvents.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IUser.cs" />

@@ -14,56 +14,63 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Protocol;
 
+        public override bool IsSendCommandAllowed(Command command)
+        {
+            return command.Type == CommandType.Status
+                || command.Type == CommandType.Supports
+                || command.Type == CommandType.Sid;
+        }
+
         public override Task<State> ProcessCommand(Command command)
         {
             if (command.Type == CommandType.Supports)
             {
-                return ProcessCommand((Supports)command);
+                return ProcessSupports((Supports)command);
             }
 
             if (command.Type == CommandType.Status)
             {
-                return ProcessCommand((Status)command);
+                return ProcessStatus((Status)command);
             }
 
-            throw new InvalidCommandException();
+            return ProcessInvalidCommand(command);
         }
 
-        private async Task<State> ProcessCommand(Supports message)
+        private async Task<State> ProcessSupports(Supports command)
         {
             var features = new[] { "BASE", "TIGR" };
             for (var index = 0; index != features.Length; index++)
             {
                 var feature = features[index];
-                if (!message.AddFeatures.Contains(feature))
+                if (!command.AddFeatures.Contains(feature))
                 {
                     await SendRequiredFeatureIsMissing(feature);
                     return State;
                 }
             }
 
-            var supportsMessage = new Supports(InformationMessageType, features, Enumerable.Empty<string>());
-            await User.SendMessage(supportsMessage);
-            var sidMessage = new Sid(new InformationMessageHeader(), User.Id.GetStringId());
-            await User.SendMessage(sidMessage);
+            var supportsMessage = new Supports(InformationMessageHeader, features, Enumerable.Empty<string>());
+            await User.SendCommand(supportsMessage);
+            var sidMessage = new Sid(new InformationMessageHeader(), User.Sid);
+            await User.SendCommand(sidMessage);
             return State.Identify;
         }
 
-        private Task<State> ProcessCommand(Status message)
+        private Task<State> ProcessStatus(Status command)
         {
-            return Task.FromResult(State);
+            return Task.FromResult(command.Severity == Status.ErrorSeverity.Fatal ? State.DisconnectedOnProtocolError : State);
         }
 
         private Task SendRequiredFeatureIsMissing(string featureName)
         {
-            var statusMessage = new Status(
-                InformationMessageType,
+            var statusCommand = new Status(
+                InformationMessageHeader,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.RequiredFeatureIsMissing,
                 $"Feature {featureName} is required");
-            return User.SendMessage(statusMessage);
+            return User.SendCommand(statusCommand);
         }
 
-        private static readonly InformationMessageHeader InformationMessageType = new InformationMessageHeader();
+        private static readonly InformationMessageHeader InformationMessageHeader = new InformationMessageHeader();
     }
 }

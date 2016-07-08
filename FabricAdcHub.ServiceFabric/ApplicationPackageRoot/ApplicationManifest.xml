@@ -31,7 +31,7 @@
             <SingletonPartition />
          </StatelessService>
       </Service>
-      <Service Name="UserActorService" GeneratedIdRef="70c90072-b8ad-4a17-84fe-f5aa5450a87d|Volatile">
+      <Service Name="UserActorService" GeneratedIdRef="d7a2e8c7-6010-4af0-b4f0-2dd31ea442f9|Persisted">
          <StatefulService ServiceTypeName="UserActorServiceType" TargetReplicaSetSize="[UserActorService_TargetReplicaSetSize]" MinReplicaSetSize="[UserActorService_MinReplicaSetSize]">
             <UniformInt64Partition PartitionCount="[UserActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
          </StatefulService>

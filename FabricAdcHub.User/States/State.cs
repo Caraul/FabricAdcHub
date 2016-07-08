@@ -5,6 +5,9 @@
         Protocol,
         Identify,
         Verify,
-        Normal
+        Normal,
+        DisconnectedOnShutdown,
+        DisconnectedOnNetworkError,
+        DisconnectedOnProtocolError
     }
 }

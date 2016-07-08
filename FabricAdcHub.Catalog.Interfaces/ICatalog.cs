@@ -7,12 +7,20 @@ namespace FabricAdcHub.Catalog.Interfaces
 {
     public interface ICatalog : IService
     {
-        Task UpdateSidInformation(string sid, Information information);
+        Task Enable();
 
-        Task<string[]> GetAllSids();
+        Task Disable();
 
-        Task<string[]> GetAllSids(IList<string> requiredFeatures, IList<string> prohibitedFeatures);
+        Task<ReservedSid> ReserveSid();
 
-        Task<SidInformation[]> GetAllSidsInformation();
+        Task ReleaseSid(string sid);
+
+        Task BroadcastSidInformation(string sid);
+
+        Task BroadcastCommand(string fromSid, Command command);
+
+        Task FeatureBroadcastCommand(string fromSid, Command command);
+
+        Task UpdateSidInformation(string sid, HashSet<string> features);
     }
 }

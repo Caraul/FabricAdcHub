@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Text;
 using System.Threading;
@@ -18,17 +19,26 @@ namespace FabricAdcHub.TcpServer
             _sid = sid;
         }
 
-        public Task Open()
+        public async Task Open(IPAddress clientIPv4, IPAddress clientIPv6)
         {
             var user = ActorProxy.Create<IUser>(new ActorId(_sid));
+            await user.SetIPs(clientIPv4, clientIPv6);
             RunInfiniteRead();
-            return user.SubscribeAsync<IUserEvents>(this);
+            await user.SubscribeAsync<IUserEvents>(this);
         }
 
-        public void MessageAvailable(string messageText)
+        public void MessageAvailable(string message)
         {
-            var messageBytes = Encoding.UTF8.GetBytes(messageText + "\n");
-            _tcpClient.GetStream().WriteAsync(messageBytes, 0, messageBytes.Length).Wait();
+            try
+            {
+                var messageBytes = Encoding.UTF8.GetBytes(message + "\n");
+                _tcpClient.GetStream().Write(messageBytes, 0, messageBytes.Length);
+            }
+            catch (Exception)
+            {
+                var user = ActorProxy.Create<IUser>(new ActorId(_sid));
+                user.Disconnect(DisconnectReason.NetworkError).Wait();
+            }
         }
 
         public void Dispose()
@@ -45,47 +55,60 @@ namespace FabricAdcHub.TcpServer
             _adcListener = Task.Run(
                 async () =>
                 {
-                    var textBuffer = new StringBuilder();
-                    var dataBuffer = new byte[256];
-                    while (!_adcListenerCancellation.IsCancellationRequested)
+                    try
                     {
-                        while (true)
-                        {
-                            var readCount = await _tcpClient.GetStream().ReadAsync(dataBuffer, 0, dataBuffer.Length, _adcListenerCancellation.Token);
-                            var text = Encoding.UTF8.GetString(dataBuffer, 0, readCount);
-                            textBuffer.Append(text);
-                            if (text.IndexOf('\n') != -1)
-                            {
-                                break;
-                            }
-                        }
-
+                        await InfiniteRead();
+                    }
+                    catch (Exception)
+                    {
                         var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-                        var bufferedText = textBuffer.ToString();
-                        var messages = bufferedText.Split('\n');
-                        if (bufferedText.Last() != '\n')
-                        {
-                            var totalMessageLength = 0;
-                            for (var index = 0; index != messages.Length - 1; index++)
-                            {
-                                await user.ProcessMessage(messages[index]);
-                                totalMessageLength += messages[index].Length + 1;
-                            }
-
-                            textBuffer.Remove(0, totalMessageLength);
-                        }
-                        else
-                        {
-                            for (var index = 0; index != messages.Length; index++)
-                            {
-                                await user.ProcessMessage(messages[index]);
-                            }
-
-                            textBuffer.Clear();
-                        }
+                        await user.Disconnect(DisconnectReason.NetworkError);
                     }
                 },
                 _adcListenerCancellation.Token);
+        }
+
+        private async Task InfiniteRead()
+        {
+            var textBuffer = new StringBuilder();
+            var dataBuffer = new byte[256];
+            while (!_adcListenerCancellation.IsCancellationRequested)
+            {
+                while (true)
+                {
+                    var readCount = await _tcpClient.GetStream().ReadAsync(dataBuffer, 0, dataBuffer.Length, _adcListenerCancellation.Token);
+                    var text = Encoding.UTF8.GetString(dataBuffer, 0, readCount);
+                    textBuffer.Append(text);
+                    if (text.IndexOf('\n') != -1)
+                    {
+                        break;
+                    }
+                }
+
+                var user = ActorProxy.Create<IUser>(new ActorId(_sid));
+                var bufferedText = textBuffer.ToString();
+                var messages = bufferedText.Split('\n');
+                if (bufferedText.Last() != '\n')
+                {
+                    var totalMessageLength = 0;
+                    for (var index = 0; index != messages.Length - 1; index++)
+                    {
+                        await user.ProcessMessage(messages[index]);
+                        totalMessageLength += messages[index].Length + 1;
+                    }
+
+                    textBuffer.Remove(0, totalMessageLength);
+                }
+                else
+                {
+                    for (var index = 0; index != messages.Length; index++)
+                    {
+                        await user.ProcessMessage(messages[index]);
+                    }
+
+                    textBuffer.Clear();
+                }
+            }
         }
 
         private readonly TcpClient _tcpClient;

@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="ICatalog.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ReservedSid.cs" />
     <Compile Include="SidInformation.cs" />
   </ItemGroup>
   <ItemGroup>

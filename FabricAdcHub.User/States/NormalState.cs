@@ -13,6 +13,11 @@ namespace FabricAdcHub.User.States
 
         public override State State => State.Identify;
 
+        public override bool IsSendCommandAllowed(Command command)
+        {
+            return true;
+        }
+
         public override async Task<State> ProcessCommand(Command command)
         {
             if (command.Type == CommandType.Information)
@@ -40,7 +45,7 @@ namespace FabricAdcHub.User.States
             if (command.Header is EchoMessageHeader)
             {
                 await DirectCommand(command);
-                await User.SendMessage(command);
+                await User.SendCommand(command);
                 return State.Normal;
             }
 

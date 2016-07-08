@@ -76,7 +76,6 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AdcClient.cs" />
-    <Compile Include="AdcClients.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TcpCommunicationListener.cs" />
     <Compile Include="TcpServer.cs" />
@@ -107,6 +106,10 @@
     <Analyzer Include="..\packages\System.Security.Cryptography.Hashing.Algorithms.Analyzers.1.1.0\analyzers\dotnet\cs\System.Security.Cryptography.Hashing.Algorithms.CSharp.Analyzers.dll" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FabricAdcHub.Catalog.Interfaces\FabricAdcHub.Catalog.Interfaces.csproj">
+      <Project>{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}</Project>
+      <Name>FabricAdcHub.Catalog.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FabricAdcHub.Core\FabricAdcHub.Core.csproj">
       <Project>{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}</Project>
       <Name>FabricAdcHub.Core</Name>

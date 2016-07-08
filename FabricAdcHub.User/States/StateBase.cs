@@ -16,6 +16,13 @@ namespace FabricAdcHub.User.States
     {
         public abstract State State { get; }
 
+        public virtual Task OnEnter()
+        {
+            return Task.CompletedTask;
+        }
+
+        public abstract bool IsSendCommandAllowed(Command command);
+
         public abstract Task<State> ProcessCommand(Command command);
 
         protected StateBase(User user)
@@ -25,37 +32,31 @@ namespace FabricAdcHub.User.States
 
         protected User User { get; }
 
-        protected async Task BroadcastCommand(Command message)
+        protected async Task<State> ProcessInvalidCommand(Command command)
         {
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
-            var allSids = await catalog.GetAllSids();
-            for (var index = 0; index != allSids.Length; index++)
-            {
-                var user = ActorProxy.Create<IUser>(new ActorId(allSids[index]));
-                await user.SendMessage(message);
-            }
+            var status = new Status(new InformationMessageHeader(), Status.ErrorSeverity.Fatal, Status.ErrorCode.InvalidState, $"Command {command.FourCc()} not available in {State} state.");
+            status.OffendingCommandOrMissingFeature.Value = command.FourCc();
+            await User.SendCommand(status);
+            return State.DisconnectedOnProtocolError;
         }
 
-        protected async Task DirectCommand(Command message)
+        protected async Task BroadcastCommand(Command command)
         {
-            var directMessageType = (DirectMessageHeader)message.Header;
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
+            await catalog.BroadcastCommand(User.Sid, command);
+        }
+
+        protected async Task DirectCommand(Command command)
+        {
+            var directMessageType = (DirectMessageHeader)command.Header;
             var user = ActorProxy.Create<IUser>(new ActorId(directMessageType.TargetSid));
-            await user.SendMessage(message);
+            await user.SendCommand(command);
         }
 
-        protected async Task FeatureBroadcastCommand(Command message)
+        protected async Task FeatureBroadcastCommand(Command command)
         {
-            var featureMessageType = (FeatureBroadcastMessageHeader)message.Header;
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
-            var allSids = await (
-                featureMessageType.RequiredFeatures.Any() || featureMessageType.ExcludedFeatures.Any()
-                ? catalog.GetAllSids(featureMessageType.RequiredFeatures, featureMessageType.ExcludedFeatures)
-                : catalog.GetAllSids());
-            for (var index = 0; index != allSids.Length; index++)
-            {
-                var user = ActorProxy.Create<IUser>(new ActorId(allSids[index]));
-                await user.SendMessage(message);
-            }
+            await catalog.FeatureBroadcastCommand(User.Sid, command);
         }
     }
 }

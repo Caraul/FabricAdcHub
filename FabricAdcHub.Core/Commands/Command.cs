@@ -16,6 +16,11 @@ namespace FabricAdcHub.Core.Commands
 
         public CommandType Type { get; }
 
+        public string FourCc()
+        {
+            return $"{Header.Type.Symbol}{Type.ToText()}";
+        }
+
         public virtual string ToText()
         {
             var allParameters = $"{Header.ToText()}{MessageSerializer.Separator}{GetParametersText()}".Trim();

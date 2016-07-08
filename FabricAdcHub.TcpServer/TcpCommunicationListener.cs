@@ -1,10 +1,16 @@
 ﻿using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
+using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using FabricAdcHub.Catalog.Interfaces;
+using FabricAdcHub.Core.Commands;
+using FabricAdcHub.Core.MessageHeaders;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
+using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.TcpServer
 {
@@ -30,6 +36,7 @@ namespace FabricAdcHub.TcpServer
                         while (!_tcpListenerCancellation.IsCancellationRequested)
                         {
                             var tcpClient = await tcpListener.AcceptTcpClientAsync();
+                            await CreateAdcClient(tcpClient);
                         }
                     }
                     finally
@@ -57,6 +64,25 @@ namespace FabricAdcHub.TcpServer
         public void Abort()
         {
             _tcpListenerCancellation.Cancel();
+        }
+
+        public async Task CreateAdcClient(TcpClient tcpClient)
+        {
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
+            var reservation = await catalog.ReserveSid();
+            if (reservation.Error != Status.ErrorCode.NoError)
+            {
+                var command = new Status(new InformationMessageHeader(), Status.ErrorSeverity.Fatal, reservation.Error, "No connections are available.");
+                var messageBytes = Encoding.UTF8.GetBytes(command.ToText() + "\n");
+                await tcpClient.GetStream().WriteAsync(messageBytes, 0, messageBytes.Length);
+                tcpClient.Close();
+                return;
+            }
+
+            var adcClient = new AdcClient(tcpClient, reservation.Sid);
+            await adcClient.Open(
+                ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv4(),
+                ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv6());
         }
 
         private readonly StatelessServiceContext _context;

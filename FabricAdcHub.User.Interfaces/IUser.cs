@@ -7,12 +7,14 @@ namespace FabricAdcHub.User.Interfaces
 {
     public interface IUser : IActor, IActorEventPublisher<IUserEvents>
     {
-        Task<bool> TryStart(IPAddress clientIPv4, IPAddress clientIPv6);
+        Task SetIPs(IPAddress clientIPv4, IPAddress clientIPv6);
+
+        Task<Information> GetInformation();
 
         Task ProcessMessage(string message);
 
-        Task SendMessage(Command message);
+        Task SendCommand(Command command);
 
-        Task SendSerializedMessage(string messageText);
+        Task Disconnect(DisconnectReason reason);
     }
 }

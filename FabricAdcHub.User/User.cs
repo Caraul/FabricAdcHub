@@ -12,20 +12,10 @@ using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.User
 {
-    [StatePersistence(StatePersistence.Volatile)]
+    [StatePersistence(StatePersistence.Persisted)]
     internal class User : Actor, IUser
     {
-        public async Task<bool> TryStart(IPAddress clientIPv4, IPAddress clientIPv6)
-        {
-            if (!await StateManager.TryAddStateAsync("state", State.Protocol))
-            {
-                return false;
-            }
-
-            ClientIPv4 = clientIPv4;
-            ClientIPv6 = clientIPv6;
-            return true;
-        }
+        public string Sid => Id.GetStringId();
 
         public IPAddress ClientIPv4 { get; private set; }
 
@@ -33,105 +23,132 @@ namespace FabricAdcHub.User
 
         public UserInformation Information { get; private set; } = new UserInformation();
 
-        public async Task ProcessMessage(string messageText)
+        public async Task SetIPs(IPAddress clientIPv4, IPAddress clientIPv6)
         {
-            var command = MessageSerializer.FromText(messageText);
+            await StateManager.AddStateAsync(StoredIPv4, clientIPv4.ToString());
+            ClientIPv4 = clientIPv4;
+            await StateManager.AddStateAsync(StoredIPv6, clientIPv6.ToString());
+            ClientIPv6 = clientIPv6;
+        }
+
+        public Task<Information> GetInformation()
+        {
+            return Task.FromResult(Information.ToMessage(new BroadcastMessageHeader(Sid)));
+        }
+
+        public async Task ProcessMessage(string message)
+        {
+            var command = MessageSerializer.FromText(message);
             var information = command as Information;
             if (information != null)
             {
                 EnrichInformationMessage(information);
             }
 
-            var newState = await _state.ProcessCommand(command);
-            if (newState != _state.State)
-            {
-                await StateManager.SetStateAsync("state", newState);
-                SwitchToState(newState);
-            }
+            var state = await _stateMachine.CurrentState.ProcessCommand(command);
+            await SwitchToState(state);
         }
 
-        public Task SendMessage(Command message)
+        public Task SendCommand(Command command)
         {
-            return SendSerializedMessage(message.ToText());
+            if (!_stateMachine.CurrentState.IsSendCommandAllowed(command))
+            {
+                return Task.CompletedTask;
+            }
+
+            return SendMessage(command.ToText());
         }
 
-        public Task SendSerializedMessage(string messageText)
+        public Task SendMessage(string message)
         {
             var events = GetEvent<IUserEvents>();
-            events.MessageAvailable(messageText);
+            events.MessageAvailable(message);
             return Task.CompletedTask;
         }
 
-        public async Task<string> UpdateInformation(Information message)
+        public async Task UpdateInformation(Information message)
         {
             Information.UpdateFromMessage(message);
-            await StateManager.SetStateAsync("information", Information);
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var storedMessage = Information.ToMessage(new BroadcastMessageHeader(Id.GetStringId()));
-            await catalog.UpdateSidInformation(Id.GetStringId(), storedMessage);
-            return storedMessage.ToText();
+            await StateManager.SetStateAsync(StoredInfomation, Information);
+            await UpdateCatalog();
         }
 
         public async Task UpdateInformation(Supports message)
         {
             Information.UpdateFromMessage(message);
-            await StateManager.SetStateAsync("information", Information);
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var storedMessage = Information.ToMessage(new BroadcastMessageHeader(Id.GetStringId()));
-            await catalog.UpdateSidInformation(Id.GetStringId(), storedMessage);
+            await StateManager.SetStateAsync(StoredInfomation, Information);
+            await UpdateCatalog();
         }
 
-        protected override async Task OnActivateAsync()
+        public async Task Disconnect(DisconnectReason reason)
         {
-            ActorEventSource.Current.ActorMessage(this, "Actor activated.");
-
-            var maybeState = await StateManager.TryGetStateAsync<State>("state");
-            if (maybeState.HasValue)
+            switch (reason)
             {
-                var maybeInformation = await StateManager.TryGetStateAsync<UserInformation>("information");
-                if (maybeInformation.HasValue)
-                {
-                    Information = maybeInformation.Value;
-                }
-
-                SwitchToState(maybeState.Value);
-            }
-        }
-
-        private void SwitchToState(State state)
-        {
-            switch (state)
-            {
-                case State.Protocol:
-                    _state = new ProtocolState(this);
+                case DisconnectReason.NetworkError:
+                    await _stateMachine.SwitchToState(State.DisconnectedOnNetworkError);
                     break;
-                case State.Identify:
-                    _state = new IdentifyState(this);
+                case DisconnectReason.ProtocolError:
+                    await _stateMachine.SwitchToState(State.DisconnectedOnProtocolError);
                     break;
-                case State.Verify:
-                    _state = new VerifyState(this);
-                    break;
-                case State.Normal:
-                    _state = new NormalState(this);
+                case DisconnectReason.HubIsDisabled:
+                    await _stateMachine.SwitchToState(State.DisconnectedOnShutdown);
                     break;
                 default:
                     throw new Exception();
             }
         }
 
+        protected override async Task OnActivateAsync()
+        {
+            ActorEventSource.Current.ActorMessage(this, "Actor activated.");
+
+            ClientIPv4 = IPAddress.Parse(await StateManager.GetOrAddStateAsync(StoredIPv4, AnyIPv4));
+            ClientIPv6 = IPAddress.Parse(await StateManager.GetOrAddStateAsync(StoredIPv6, AnyIPv6));
+
+            var state = await StateManager.GetOrAddStateAsync(StoredState, State.Protocol);
+            _stateMachine = new StateMachine(this);
+            await _stateMachine.Start(state);
+
+            var maybeInformation = await StateManager.TryGetStateAsync<UserInformation>(StoredInfomation);
+            if (maybeInformation.HasValue)
+            {
+                Information = maybeInformation.Value;
+            }
+        }
+
+        private async Task SwitchToState(State state)
+        {
+            await StateManager.SetStateAsync(StoredState, state);
+            await _stateMachine.SwitchToState(state);
+        }
+
         private void EnrichInformationMessage(Information message)
         {
-            if (message.IpAddressV4.IsDefined && message.IpAddressV4.Value == "0.0.0.0")
+            if (message.IpAddressV4.IsDefined && message.IpAddressV4.Value == AnyIPv4)
             {
                 message.IpAddressV4.Value = ClientIPv4.ToString();
             }
 
-            if (message.IpAddressV6.IsDefined && message.IpAddressV6.Value == "::")
+            if (message.IpAddressV6.IsDefined && message.IpAddressV6.Value == AnyIPv6)
             {
                 message.IpAddressV6.Value = ClientIPv6.ToString();
             }
         }
 
-        private StateBase _state;
+        private async Task UpdateCatalog()
+        {
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
+            await catalog.UpdateSidInformation(Sid, Information.Features);
+        }
+
+        private const string StoredIPv4 = "ipv4";
+        private const string StoredIPv6 = "ipv6";
+        private const string StoredState = "state";
+        private const string StoredInfomation = "information";
+
+        private static readonly string AnyIPv4 = IPAddress.Any.ToString();
+        private static readonly string AnyIPv6 = IPAddress.IPv6Any.ToString();
+
+        private StateMachine _stateMachine;
     }
 }

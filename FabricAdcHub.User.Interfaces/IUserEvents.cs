@@ -4,6 +4,6 @@ namespace FabricAdcHub.User.Interfaces
 {
     public interface IUserEvents : IActorEvents
     {
-        void MessageAvailable(string messageText);
+        void MessageAvailable(string message);
     }
 }

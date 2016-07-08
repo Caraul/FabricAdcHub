@@ -15,7 +15,7 @@ namespace FabricAdcHub.Core.Commands
                   parameters[1].Unescape())
         {
             new NamedFlags(parameters.Skip(2))
-                .Get(OffendingMessageOrMissingFeature)
+                .Get(OffendingCommandOrMissingFeature)
                 .Get(SecondsUntilEndOfBan)
                 .Get(Token)
                 .Get(Protocol)
@@ -39,7 +39,7 @@ namespace FabricAdcHub.Core.Commands
 
         public string Description { get; }
 
-        public NamedFlag<string> OffendingMessageOrMissingFeature { get; } = new NamedFlag<string>("FC");
+        public NamedFlag<string> OffendingCommandOrMissingFeature { get; } = new NamedFlag<string>("FC");
 
         public NamedFlag<int> SecondsUntilEndOfBan { get; } = new NamedFlag<int>("TL");
 
@@ -97,7 +97,7 @@ namespace FabricAdcHub.Core.Commands
         protected override string GetParametersText()
         {
             var namedFlags = new NamedFlags()
-                .Set(OffendingMessageOrMissingFeature)
+                .Set(OffendingCommandOrMissingFeature)
                 .Set(SecondsUntilEndOfBan)
                 .Set(Token)
                 .Set(Protocol)
