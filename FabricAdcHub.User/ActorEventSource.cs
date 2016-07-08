@@ -20,6 +20,9 @@ namespace FabricAdcHub.User
         public static class Keywords
         {
             public const EventKeywords HostInitialization = (EventKeywords)0x1L;
+            public const EventKeywords AdcCommand = (EventKeywords)0x2L;
+            public const EventKeywords State = (EventKeywords)0x4L;
+            public const EventKeywords OnOff = (EventKeywords)0x8L;
         }
 
         [NonEvent]
@@ -65,6 +68,36 @@ namespace FabricAdcHub.User
             WriteEvent(ActorHostInitializationFailedEventId, exception);
         }
 
+        [Event(StateInitializedEventId, Level = EventLevel.Verbose, Message = "State for '{0}' initialized to '{1}'", Keywords = Keywords.State)]
+        public void StateInitialized(string sid, string state)
+        {
+            WriteEvent(StateInitializedEventId, sid, state);
+        }
+
+        [Event(StateChangedEventId, Level = EventLevel.Verbose, Message = "State for '{0}' changed from '{1}' to '{2}'", Keywords = Keywords.State)]
+        public void StateChanged(string sid, string oldState, string newState)
+        {
+            WriteEvent(StateChangedEventId, sid, oldState, newState);
+        }
+
+        [Event(OpenedEventId, Level = EventLevel.Verbose, Message = "User '{0}' is opened", Keywords = Keywords.OnOff)]
+        public void Opened(string sid)
+        {
+            WriteEvent(OpenedEventId, sid);
+        }
+
+        [Event(ClosedEventId, Level = EventLevel.Verbose, Message = "User '{0}' is closed", Keywords = Keywords.OnOff)]
+        public void Closed(string sid)
+        {
+            WriteEvent(ClosedEventId, sid);
+        }
+
+        [Event(CommandDeserializationFailedEventId, Level = EventLevel.Warning, Message = "Message '{0}' is not a valid ADC command", Keywords = Keywords.AdcCommand)]
+        public void CommandDeserializationFailed(string message)
+        {
+            WriteEvent(CommandDeserializationFailedEventId, message);
+        }
+
         private ActorEventSource()
         {
         }
@@ -72,6 +105,12 @@ namespace FabricAdcHub.User
         private const int MessageEventId = 1;
         private const int ActorMessageEventId = 2;
         private const int ActorHostInitializationFailedEventId = 3;
+
+        private const int StateInitializedEventId = 4;
+        private const int StateChangedEventId = 5;
+        private const int OpenedEventId = 6;
+        private const int ClosedEventId = 7;
+        private const int CommandDeserializationFailedEventId = 8;
 
         [Event(ActorMessageEventId, Level = EventLevel.Informational, Message = "{9}")]
         private void ActorMessage(

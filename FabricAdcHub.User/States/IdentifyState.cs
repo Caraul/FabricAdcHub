@@ -148,7 +148,7 @@ namespace FabricAdcHub.User.States
         private async Task BroadcastAllUsersInformation()
         {
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            await catalog.BroadcastSidInformation(User.Sid);
+            await catalog.BroadcastNewSidInformation(User.Sid);
         }
 
         private static readonly InformationMessageHeader InformationType = new InformationMessageHeader();

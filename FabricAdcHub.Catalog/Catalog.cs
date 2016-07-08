@@ -36,6 +36,8 @@ namespace FabricAdcHub.Catalog
                 await state.SetAsync(tx, IsEnabled, true);
                 await tx.CommitAsync();
             }
+
+            ServiceEventSource.Current.Enabled();
         }
 
         public async Task Disable()
@@ -50,6 +52,8 @@ namespace FabricAdcHub.Catalog
             await DisconnectAll();
             var sids = await Sids;
             await sids.ClearAsync();
+
+            ServiceEventSource.Current.Disabled();
         }
 
         public async Task<ReservedSid> ReserveSid()
@@ -60,6 +64,7 @@ namespace FabricAdcHub.Catalog
                 var isEnabled = await state.TryGetValueAsync(tx, IsEnabled);
                 if (!isEnabled.HasValue || !isEnabled.Value)
                 {
+                    ServiceEventSource.Current.SidReservationFailed(Status.ErrorCode.HubDisabled.ToString());
                     return new ReservedSid(Status.ErrorCode.HubDisabled);
                 }
 
@@ -69,6 +74,7 @@ namespace FabricAdcHub.Catalog
                 {
                     if (await sids.GetCountAsync(tx) == MaxSessionsCount)
                     {
+                        ServiceEventSource.Current.SidReservationFailed(Status.ErrorCode.HubFull.ToString());
                         return new ReservedSid(Status.ErrorCode.HubFull);
                     }
 
@@ -76,6 +82,8 @@ namespace FabricAdcHub.Catalog
                 }
 
                 await tx.CommitAsync();
+
+                ServiceEventSource.Current.SidReserved(newSid);
                 return new ReservedSid(newSid);
             }
         }
@@ -85,12 +93,13 @@ namespace FabricAdcHub.Catalog
             using (var tx = StateManager.CreateTransaction())
             {
                 await DisconnectUser(sid);
+                await GetUser(sid).Close();
                 var deletedSids = await DeletedSids;
                 await deletedSids.EnqueueAsync(tx, sid);
             }
         }
 
-        public async Task BroadcastSidInformation(string newSid)
+        public async Task BroadcastNewSidInformation(string newSid)
         {
             var newUser = ActorProxy.Create<IUser>(new ActorId(newSid));
             var newInformation = await newUser.GetInformation();
@@ -103,16 +112,20 @@ namespace FabricAdcHub.Catalog
                         return;
                     }
 
-                    var user = ActorProxy.Create<IUser>(new ActorId(sid));
+                    var user = GetUser(sid);
                     await user.SendCommand(newInformation);
                     var information = await user.GetInformation();
                     await newUser.SendCommand(information);
                 });
             await newUser.SendCommand(newInformation);
+
+            ServiceEventSource.Current.NewSidInformationBroadcasted(newSid);
         }
 
         public async Task BroadcastCommand(string fromSid, Command command)
         {
+            ServiceEventSource.Current.Broadcasted(command.ToText());
+
             var maybeSids = await MaybeSids;
             if (!maybeSids.HasValue)
             {
@@ -125,14 +138,15 @@ namespace FabricAdcHub.Catalog
                 {
                     if (sid != fromSid)
                     {
-                        var user = ActorProxy.Create<IUser>(new ActorId(sid));
-                        await user.SendCommand(command);
+                        await GetUser(sid).SendCommand(command);
                     }
                 });
         }
 
         public async Task FeatureBroadcastCommand(string fromSid, Command command)
         {
+            ServiceEventSource.Current.FeatureBroadcasted(command.ToText());
+
             var maybeSids = await MaybeSids;
             if (!maybeSids.HasValue)
             {
@@ -148,8 +162,7 @@ namespace FabricAdcHub.Catalog
                         && !featureMessageType.RequiredFeatures.Except(data.Features).Any()
                         && !data.Features.Intersect(featureMessageType.ExcludedFeatures).Any())
                     {
-                        var user = ActorProxy.Create<IUser>(new ActorId(sid));
-                        await user.SendCommand(command);
+                        await GetUser(sid).SendCommand(command);
                     }
                 });
         }
@@ -161,6 +174,8 @@ namespace FabricAdcHub.Catalog
                 await (await Sids).SetAsync(tx, sid, new SidInformation { Features = features });
                 await tx.CommitAsync();
             }
+
+            ServiceEventSource.Current.InformationUpdated(sid);
         }
 
         protected override IEnumerable<ServiceReplicaListener> CreateServiceReplicaListeners()
@@ -183,6 +198,7 @@ namespace FabricAdcHub.Catalog
                         await DeleteUser(sid);
                         var sids = await Sids;
                         await sids.TryRemoveAsync(tx, sid);
+
                         await tx.CommitAsync();
                     }
                 }
@@ -223,8 +239,7 @@ namespace FabricAdcHub.Catalog
                 await Sids,
                 async sid =>
                 {
-                    var user = ActorProxy.Create<IUser>(new ActorId(sid));
-                    await user.SendCommand(quitCommand);
+                    await GetUser(sid).SendCommand(quitCommand);
                 });
         }
 
@@ -234,27 +249,18 @@ namespace FabricAdcHub.Catalog
                 await Sids,
                 async sid =>
                 {
-                    var user = ActorProxy.Create<IUser>(new ActorId(sid));
+                    var user = GetUser(sid);
                     await user.Disconnect(DisconnectReason.HubIsDisabled);
                     var quitCommand = new Quit(new InformationMessageHeader(), sid);
                     await user.SendCommand(quitCommand);
+                    await user.Close();
                     await DeleteUser(sid);
                 });
         }
 
-        private async Task ForAllSids(SidDictionary sids, Func<string, Task> process)
+        private Task ForAllSids(SidDictionary sids, Func<string, Task> process)
         {
-            using (var tx = StateManager.CreateTransaction())
-            {
-                var enumerable = await sids.CreateEnumerableAsync(tx);
-                using (var enumerator = enumerable.GetAsyncEnumerator())
-                {
-                    while (await enumerator.MoveNextAsync(CancellationToken.None))
-                    {
-                        await process(enumerator.Current.Key);
-                    }
-                }
-            }
+            return ForAllSids(sids, (sid, _) => process(sid));
         }
 
         private async Task ForAllSids(SidDictionary sids, Func<string, SidInformation, Task> process)
@@ -272,8 +278,15 @@ namespace FabricAdcHub.Catalog
             }
         }
 
+        private static IUser GetUser(string sid)
+        {
+            return ActorProxy.Create<IUser>(new ActorId(sid));
+        }
+
         private static async Task DeleteUser(string sid)
         {
+            ServiceEventSource.Current.SidReleased(sid);
+
             var actorId = new ActorId(sid);
             var actorServiceProxy = ActorServiceProxy.Create(new Uri("fabric:/FabricAdcHub/UserActorService"), actorId);
             await actorServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);

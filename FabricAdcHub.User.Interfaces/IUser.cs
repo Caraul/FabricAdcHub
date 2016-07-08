@@ -7,7 +7,9 @@ namespace FabricAdcHub.User.Interfaces
 {
     public interface IUser : IActor, IActorEventPublisher<IUserEvents>
     {
-        Task SetIPs(IPAddress clientIPv4, IPAddress clientIPv6);
+        Task Open(IPAddress clientIPv4, IPAddress clientIPv6);
+
+        Task Close();
 
         Task<Information> GetInformation();
 

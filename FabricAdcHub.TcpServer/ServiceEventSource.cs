@@ -21,6 +21,7 @@ namespace FabricAdcHub.TcpServer
         {
             public const EventKeywords Requests = (EventKeywords)0x1L;
             public const EventKeywords ServiceInitialization = (EventKeywords)0x2L;
+            public const EventKeywords TcpExchange = (EventKeywords)0x4L;
         }
 
         [NonEvent]
@@ -88,6 +89,36 @@ namespace FabricAdcHub.TcpServer
             WriteEvent(ServiceRequestFailedEventId, exception);
         }
 
+        [Event(TcpExchangeStartedEventId, Level = EventLevel.Verbose, Message = "TCP exchange started with '{0}'", Keywords = Keywords.TcpExchange)]
+        public void TcpExchangeStarted(string ipAddress)
+        {
+            WriteEvent(TcpExchangeStartedEventId, ipAddress);
+        }
+
+        [Event(TcpExchangeEndedEventId, Level = EventLevel.Verbose, Message = "TCP exchange ended with '{0}'", Keywords = Keywords.TcpExchange)]
+        public void TcpExchangeEnded(string ipAddress)
+        {
+            WriteEvent(TcpExchangeEndedEventId, ipAddress);
+        }
+
+        [Event(TcpExchangeFailedEventId, Level = EventLevel.Error, Message = "TCP exchange failed", Keywords = Keywords.TcpExchange)]
+        public void TcpExchangeFailed(string exception)
+        {
+            WriteEvent(TcpExchangeFailedEventId, exception);
+        }
+
+        [Event(AdcMessageReceivedEventId, Level = EventLevel.Verbose, Message = "ADC message received '{0}'", Keywords = Keywords.TcpExchange)]
+        public void AdcMessageReceived(string message)
+        {
+            WriteEvent(AdcMessageReceivedEventId, message);
+        }
+
+        [Event(AdcMessageSentEventId, Level = EventLevel.Verbose, Message = "ADC message sent '{0}'", Keywords = Keywords.TcpExchange)]
+        public void AdcMessageSent(string message)
+        {
+            WriteEvent(AdcMessageSentEventId, message);
+        }
+
         private ServiceEventSource()
         {
         }
@@ -99,6 +130,12 @@ namespace FabricAdcHub.TcpServer
         private const int ServiceRequestStartEventId = 5;
         private const int ServiceRequestStopEventId = 6;
         private const int ServiceRequestFailedEventId = 7;
+
+        private const int TcpExchangeStartedEventId = 8;
+        private const int TcpExchangeEndedEventId = 9;
+        private const int TcpExchangeFailedEventId = 10;
+        private const int AdcMessageReceivedEventId = 11;
+        private const int AdcMessageSentEventId = 12;
 
         [Event(ServiceMessageEventId, Level = EventLevel.Informational, Message = "{7}")]
         private void ServiceMessage(

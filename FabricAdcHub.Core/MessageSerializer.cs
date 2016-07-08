@@ -10,16 +10,38 @@ namespace FabricAdcHub.Core
     {
         public const string Separator = " ";
 
-        public static Command FromText(string text)
+        public static bool TryCreateFromText(string text, out Command command)
         {
+            command = null;
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return false;
+            }
+
             var parts = text.Split(Separator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
             var messageTypeAndName = parts[0];
+            if (messageTypeAndName.Length != 4)
+            {
+                return false;
+            }
+
             var parameters = parts.Skip(1).ToList();
 
             var messageTypeSymbol = messageTypeAndName[0];
+            if (!MessageHeaderCreators.ContainsKey(messageTypeSymbol))
+            {
+                return false;
+            }
+
             var messageHeader = MessageHeaderCreators[messageTypeSymbol](parameters);
             var commandName = messageTypeAndName.Substring(1, 3);
-            return CommandCreators[commandName](messageHeader, parameters.Skip(messageHeader.Type.NumberOfParameters).ToList());
+            if (!CommandCreators.ContainsKey(commandName))
+            {
+                return false;
+            }
+
+            command = CommandCreators[commandName](messageHeader, parameters.Skip(messageHeader.Type.NumberOfParameters).ToList());
+            return true;
         }
 
         private static readonly Dictionary<string, Func<MessageHeader, IList<string>, Command>> CommandCreators = new Dictionary<string, Func<MessageHeader, IList<string>, Command>>
@@ -30,7 +52,7 @@ namespace FabricAdcHub.Core
             { CommandType.Information.Name, (messageHeader, parameters) => new Information(messageHeader, parameters) },
             { CommandType.GetPassword.Name, (messageHeader, parameters) => new GetPassword(messageHeader, parameters) },
             { CommandType.ConnectToMe.Name, (messageHeader, parameters) => new ConnectToMe(messageHeader, parameters) },
-            { CommandType.ReversedConnectToMe.Name, (messageHeader, parameters) => new ReverseConnectToMe(messageHeader, parameters) },
+            { CommandType.ReversedConnectToMe.Name, (messageHeader, parameters) => new ReversedConnectToMe(messageHeader, parameters) },
             { CommandType.Quit.Name, (messageHeader, parameters) => new Quit(messageHeader, parameters) },
             { CommandType.Message.Name, (messageHeader, parameters) => new Msg(messageHeader, parameters) },
             { CommandType.Search.Name, (messageHeader, parameters) => new Search(messageHeader, parameters) },

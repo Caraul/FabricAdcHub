@@ -81,7 +81,7 @@
     <Compile Include="Commands\Password.cs" />
     <Compile Include="Commands\Quit.cs" />
     <Compile Include="Commands\Result.cs" />
-    <Compile Include="Commands\ReverseConnectToMe.cs" />
+    <Compile Include="Commands\ReversedConnectToMe.cs" />
     <Compile Include="Commands\Search.cs" />
     <Compile Include="Commands\Send.cs" />
     <Compile Include="Commands\Sid.cs" />

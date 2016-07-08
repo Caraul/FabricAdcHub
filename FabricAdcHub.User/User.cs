@@ -23,12 +23,24 @@ namespace FabricAdcHub.User
 
         public UserInformation Information { get; private set; } = new UserInformation();
 
-        public async Task SetIPs(IPAddress clientIPv4, IPAddress clientIPv6)
+        public async Task Open(IPAddress clientIPv4, IPAddress clientIPv6)
         {
             await StateManager.AddStateAsync(StoredIPv4, clientIPv4.ToString());
             ClientIPv4 = clientIPv4;
             await StateManager.AddStateAsync(StoredIPv6, clientIPv6.ToString());
             ClientIPv6 = clientIPv6;
+
+            ActorEventSource.Current.Opened(Sid);
+        }
+
+        public Task Close()
+        {
+            var events = GetEvent<IUserEvents>();
+            events.Closed();
+
+            ActorEventSource.Current.Closed(Sid);
+
+            return Task.CompletedTask;
         }
 
         public Task<Information> GetInformation()
@@ -38,7 +50,13 @@ namespace FabricAdcHub.User
 
         public async Task ProcessMessage(string message)
         {
-            var command = MessageSerializer.FromText(message);
+            Command command;
+            if (MessageSerializer.TryCreateFromText(message, out command))
+            {
+                ActorEventSource.Current.CommandDeserializationFailed(message);
+                return;
+            }
+
             var information = command as Information;
             if (information != null)
             {
@@ -106,6 +124,7 @@ namespace FabricAdcHub.User
             ClientIPv6 = IPAddress.Parse(await StateManager.GetOrAddStateAsync(StoredIPv6, AnyIPv6));
 
             var state = await StateManager.GetOrAddStateAsync(StoredState, State.Protocol);
+            ActorEventSource.Current.StateInitialized(Sid, state.ToString());
             _stateMachine = new StateMachine(this);
             await _stateMachine.Start(state);
 
@@ -118,6 +137,7 @@ namespace FabricAdcHub.User
 
         private async Task SwitchToState(State state)
         {
+            ActorEventSource.Current.StateChanged(Sid, _stateMachine.CurrentState.State.ToString(), state.ToString());
             await StateManager.SetStateAsync(StoredState, state);
             await _stateMachine.SwitchToState(state);
         }

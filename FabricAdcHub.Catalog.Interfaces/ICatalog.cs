@@ -15,7 +15,7 @@ namespace FabricAdcHub.Catalog.Interfaces
 
         Task ReleaseSid(string sid);
 
-        Task BroadcastSidInformation(string sid);
+        Task BroadcastNewSidInformation(string sid);
 
         Task BroadcastCommand(string fromSid, Command command);
 

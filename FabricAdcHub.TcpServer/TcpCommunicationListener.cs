@@ -68,18 +68,23 @@ namespace FabricAdcHub.TcpServer
 
         public async Task CreateAdcClient(TcpClient tcpClient)
         {
+            ServiceEventSource.Current.TcpExchangeStarted(tcpClient.Client.RemoteEndPoint.ToString());
+
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
             var reservation = await catalog.ReserveSid();
             if (reservation.Error != Status.ErrorCode.NoError)
             {
-                var command = new Status(new InformationMessageHeader(), Status.ErrorSeverity.Fatal, reservation.Error, "No connections are available.");
-                var messageBytes = Encoding.UTF8.GetBytes(command.ToText() + "\n");
+                var command = new Status(new InformationMessageHeader(), Status.ErrorSeverity.Fatal, reservation.Error, "All your connection are reject by us.");
+                var message = command.ToText();
+                var messageBytes = Encoding.UTF8.GetBytes(message + "\n");
+                ServiceEventSource.Current.AdcMessageSent(message);
                 await tcpClient.GetStream().WriteAsync(messageBytes, 0, messageBytes.Length);
                 tcpClient.Close();
+                ServiceEventSource.Current.TcpExchangeEnded(tcpClient.Client.RemoteEndPoint.ToString());
                 return;
             }
 
-            var adcClient = new AdcClient(tcpClient, reservation.Sid);
+            var adcClient = new AdcClient(tcpClient);
             await adcClient.Open(
                 ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv4(),
                 ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv6());

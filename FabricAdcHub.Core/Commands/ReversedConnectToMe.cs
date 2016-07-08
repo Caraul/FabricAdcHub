@@ -3,14 +3,14 @@ using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
 {
-    public sealed class ReverseConnectToMe : Command
+    public sealed class ReversedConnectToMe : Command
     {
-        public ReverseConnectToMe(MessageHeader header, IList<string> parameters)
+        public ReversedConnectToMe(MessageHeader header, IList<string> parameters)
             : this(header, parameters[0], parameters[1])
         {
         }
 
-        public ReverseConnectToMe(MessageHeader header, string protocol, string token)
+        public ReversedConnectToMe(MessageHeader header, string protocol, string token)
             : base(header, CommandType.ReversedConnectToMe)
         {
             Protocol = protocol;
