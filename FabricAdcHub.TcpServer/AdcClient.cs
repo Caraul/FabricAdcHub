@@ -45,7 +45,7 @@ namespace FabricAdcHub.TcpServer
         {
             try
             {
-                SendMessage(message);
+                SendAvailableMessage(message);
             }
             catch (Exception exception)
             {
@@ -143,7 +143,7 @@ namespace FabricAdcHub.TcpServer
             await _tcpClient.GetStream().WriteAsync(messageBytes, 0, messageBytes.Length);
         }
 
-        private void SendMessage(string message)
+        private void SendAvailableMessage(string message)
         {
             ServiceEventSource.Current.AdcMessageSent(message);
 

@@ -12,7 +12,7 @@ using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.User
 {
-    [StatePersistence(StatePersistence.Persisted)]
+    [StatePersistence(StatePersistence.Volatile)]
     internal class User : Actor, IUser
     {
         public string Sid => Id.GetStringId();

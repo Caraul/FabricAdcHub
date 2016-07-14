@@ -205,13 +205,13 @@ namespace FabricAdcHub.Catalog
             }
         }
 
-        private Task<StateDictionary> State => StateManager.GetOrAddAsync<StateDictionary>("state");
+        private Task<StateDictionary> State => StateManager.GetOrAddAsync<StateDictionary>(StoredState);
 
-        private Task<SidDictionary> Sids => StateManager.GetOrAddAsync<SidDictionary>("sids");
+        private Task<SidDictionary> Sids => StateManager.GetOrAddAsync<SidDictionary>(StoredSids);
 
-        private Task<ConditionalValue<SidDictionary>> MaybeSids => StateManager.TryGetAsync<SidDictionary>("sids");
+        private Task<ConditionalValue<SidDictionary>> MaybeSids => StateManager.TryGetAsync<SidDictionary>(StoredSids);
 
-        private Task<DeletedSidsQueue> DeletedSids => StateManager.GetOrAddAsync<DeletedSidsQueue>("deletedsids");
+        private Task<DeletedSidsQueue> DeletedSids => StateManager.GetOrAddAsync<DeletedSidsQueue>(StoredDeletedSids);
 
         private async Task InitializeState()
         {
@@ -292,6 +292,9 @@ namespace FabricAdcHub.Catalog
             await actorServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);
         }
 
+        private const string StoredState = "state";
+        private const string StoredSids = "sids";
+        private const string StoredDeletedSids = "deletedsids";
         private const string IsEnabled = "enabled";
         private const int MaxSessionsCount = 32 * 32 * 32 * 32;
         private readonly Random _random = new Random();

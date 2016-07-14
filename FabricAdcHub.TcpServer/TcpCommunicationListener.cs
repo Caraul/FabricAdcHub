@@ -1,16 +1,10 @@
-﻿using System;
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FabricAdcHub.Catalog.Interfaces;
-using FabricAdcHub.Core.Commands;
-using FabricAdcHub.Core.MessageHeaders;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
-using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.TcpServer
 {
@@ -69,20 +63,6 @@ namespace FabricAdcHub.TcpServer
         public async Task CreateAdcClient(TcpClient tcpClient)
         {
             ServiceEventSource.Current.TcpExchangeStarted(tcpClient.Client.RemoteEndPoint.ToString());
-
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            var reservation = await catalog.ReserveSid();
-            if (reservation.Error != Status.ErrorCode.NoError)
-            {
-                var command = new Status(new InformationMessageHeader(), Status.ErrorSeverity.Fatal, reservation.Error, "All your connection are reject by us.");
-                var message = command.ToText();
-                var messageBytes = Encoding.UTF8.GetBytes(message + "\n");
-                ServiceEventSource.Current.AdcMessageSent(message);
-                await tcpClient.GetStream().WriteAsync(messageBytes, 0, messageBytes.Length);
-                tcpClient.Close();
-                ServiceEventSource.Current.TcpExchangeEnded(tcpClient.Client.RemoteEndPoint.ToString());
-                return;
-            }
 
             var adcClient = new AdcClient(tcpClient);
             await adcClient.Open(

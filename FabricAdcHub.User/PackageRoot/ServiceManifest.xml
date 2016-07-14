@@ -1,9 +1,9 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ServiceManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" Name="FabricAdcHub.UserPkg" Version="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <ServiceTypes>
-    <StatefulServiceType ServiceTypeName="UserActorServiceType" HasPersistedState="true">
+    <StatefulServiceType ServiceTypeName="UserActorServiceType">
       <Extensions>
-        <Extension Name="__GeneratedServiceType__" GeneratedId="d7a2e8c7-6010-4af0-b4f0-2dd31ea442f9|Persisted">
+        <Extension Name="__GeneratedServiceType__" GeneratedId="4d4bfb8a-ed7a-48f7-9773-dc9c074cf985|Volatile">
           <GeneratedNames xmlns="http://schemas.microsoft.com/2015/03/fabact-no-schema">
             <DefaultService Name="UserActorService" />
             <ServiceEndpoint Name="UserActorServiceEndpoint" />
