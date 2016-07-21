@@ -25,9 +25,9 @@ namespace FabricAdcHub.User
 
         public async Task Open(IPAddress clientIPv4, IPAddress clientIPv6)
         {
-            await StateManager.AddStateAsync(StoredIPv4, clientIPv4.ToString());
+            await StateManager.SetStateAsync(StoredIPv4, clientIPv4.ToString());
             ClientIPv4 = clientIPv4;
-            await StateManager.AddStateAsync(StoredIPv6, clientIPv6.ToString());
+            await StateManager.SetStateAsync(StoredIPv6, clientIPv6.ToString());
             ClientIPv6 = clientIPv6;
 
             ActorEventSource.Current.Opened(Sid);
@@ -43,15 +43,15 @@ namespace FabricAdcHub.User
             return Task.CompletedTask;
         }
 
-        public Task<Information> GetInformation()
+        public Task<string> GetInformationMessage()
         {
-            return Task.FromResult(Information.ToMessage(new BroadcastMessageHeader(Sid)));
+            return Task.FromResult(Information.ToCommand(new BroadcastMessageHeader(Sid)).ToMessage());
         }
 
         public async Task ProcessMessage(string message)
         {
             Command command;
-            if (MessageSerializer.TryCreateFromText(message, out command))
+            if (!MessageSerializer.TryCreateFromText(message, out command))
             {
                 ActorEventSource.Current.CommandDeserializationFailed(message);
                 return;
@@ -74,7 +74,7 @@ namespace FabricAdcHub.User
                 return Task.CompletedTask;
             }
 
-            return SendMessage(command.ToText());
+            return SendMessage(command.ToMessage());
         }
 
         public Task SendMessage(string message)
@@ -86,14 +86,14 @@ namespace FabricAdcHub.User
 
         public async Task UpdateInformation(Information message)
         {
-            Information.UpdateFromMessage(message);
+            Information.UpdateFromCommand(message);
             await StateManager.SetStateAsync(StoredInfomation, Information);
             await UpdateCatalog();
         }
 
         public async Task UpdateInformation(Supports message)
         {
-            Information.UpdateFromMessage(message);
+            Information.UpdateFromCommand(message);
             await StateManager.SetStateAsync(StoredInfomation, Information);
             await UpdateCatalog();
         }
@@ -157,7 +157,7 @@ namespace FabricAdcHub.User
 
         private async Task UpdateCatalog()
         {
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
             await catalog.UpdateSidInformation(Sid, Information.Features);
         }
 

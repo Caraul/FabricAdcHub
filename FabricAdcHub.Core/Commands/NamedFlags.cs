@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using FabricAdcHub.Core.Utilites;
 
 namespace FabricAdcHub.Core.Commands
 {
@@ -110,7 +111,7 @@ namespace FabricAdcHub.Core.Commands
 
         public string ToText()
         {
-            return Command.BuildString(_parameters.Where(pair => pair.Value.Any()).SelectMany(pair => pair.Value.Select(value => pair.Key + value)));
+            return Command.BuildString(_parameters.Where(pair => pair.Value.Any()).SelectMany(pair => pair.Value.Select(value => (pair.Key + value).Escape())));
         }
 
         private void CreateParameter(string name)

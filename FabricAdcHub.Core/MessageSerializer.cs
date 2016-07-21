@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
+using FabricAdcHub.Core.Utilites;
 
 namespace FabricAdcHub.Core
 {
@@ -18,7 +19,10 @@ namespace FabricAdcHub.Core
                 return false;
             }
 
-            var parts = text.Split(Separator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries);
+            var parts = text
+                .Split(Separator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => part.Unescape())
+                .ToArray();
             var messageTypeAndName = parts[0];
             if (messageTypeAndName.Length != 4)
             {

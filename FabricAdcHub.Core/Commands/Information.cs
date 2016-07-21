@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
@@ -36,7 +37,7 @@ namespace FabricAdcHub.Core.Commands
                 .Get(HubsAsRegisteredUser)
                 .Get(HubsAsOperator)
                 .Get(Token)
-                .Get(ClientType, () => ClientTypes.Bot, () => ClientTypes.Bot, value => (ClientTypes)int.Parse(value))
+                .Get(ClientType, value => (ClientTypes)int.Parse(value))
                 .Get(Away, value => (AwayState)int.Parse(value))
                 .Get(Features, value => new HashSet<string>(value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
                 .Get(Referrer);
@@ -132,9 +133,9 @@ namespace FabricAdcHub.Core.Commands
                 .Set(HubsAsRegisteredUser)
                 .Set(HubsAsOperator)
                 .Set(Token)
-                .Set(ClientType, value => value.ToString())
+                .Set(ClientType, value => ((int)value).ToString(CultureInfo.InvariantCulture))
                 .Set(Away, value => value == AwayState.Away ? "1" : "2")
-                .Set(Features, features => string.Join(",", Features))
+                .Set(Features, features => string.Join(",", features))
                 .Set(Referrer);
             return namedFlags.ToText();
         }

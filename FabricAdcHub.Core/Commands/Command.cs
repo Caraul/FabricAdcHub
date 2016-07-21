@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using FabricAdcHub.Core.MessageHeaders;
+using FabricAdcHub.Core.Utilites;
 
 namespace FabricAdcHub.Core.Commands
 {
@@ -21,7 +22,7 @@ namespace FabricAdcHub.Core.Commands
             return $"{Header.Type.Symbol}{Type.ToText()}";
         }
 
-        public virtual string ToText()
+        public string ToMessage()
         {
             var allParameters = $"{Header.ToText()}{MessageSerializer.Separator}{GetParametersText()}".Trim();
             return $"{Header.Type.Symbol}{Type.ToText()}{MessageSerializer.Separator}{allParameters}";

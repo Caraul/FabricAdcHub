@@ -6,9 +6,6 @@ using FabricAdcHub.Catalog.Interfaces;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.Core.Utilites;
-using FabricAdcHub.User.Interfaces;
-using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.User.States
@@ -98,15 +95,21 @@ namespace FabricAdcHub.User.States
                 return false;
             }
 
-            if (!command.IpAddressV4.IsDefined)
+            if (!command.IpAddressV4.IsDefined && !command.IpAddressV6.IsDefined)
             {
                 await SendRequiredFieldIsMissing("I4");
                 return false;
             }
 
-            if (command.IpAddressV4.Value != User.ClientIPv4.ToString())
+            if (command.IpAddressV4.IsDefined && command.IpAddressV4.Value != User.ClientIPv4.ToString())
             {
-                await SendInvalidIPv4();
+                await SendInvalidIPv4(User.ClientIPv4.ToString());
+                return false;
+            }
+
+            if (command.IpAddressV6.IsDefined && command.IpAddressV6.Value != User.ClientIPv6.ToString())
+            {
+                await SendInvalidIPv6(User.ClientIPv6.ToString());
                 return false;
             }
 
@@ -116,13 +119,13 @@ namespace FabricAdcHub.User.States
 
         private Task SendRequiredFieldIsMissing(string fieldName)
         {
-            var statusMessage = new Status(
+            var status = new Status(
                 InformationType,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.RequiredInfFieldIsMissingOrBad,
                 $"Field {fieldName} is required");
-            statusMessage.MissingInfField.Value = fieldName;
-            return User.SendCommand(statusMessage);
+            status.MissingInfField.Value = fieldName;
+            return User.SendCommand(status);
         }
 
         private Task SendInvalidPid()
@@ -135,20 +138,33 @@ namespace FabricAdcHub.User.States
             return User.SendCommand(status);
         }
 
-        private Task SendInvalidIPv4()
+        private Task SendInvalidIPv4(string correctIp)
         {
             var status = new Status(
                 InformationType,
                 Status.ErrorSeverity.Fatal,
                 Status.ErrorCode.InvalidIp,
                 string.Empty);
+            status.InvalidInfIpv4.Value = correctIp;
+            return User.SendCommand(status);
+        }
+
+        private Task SendInvalidIPv6(string correctIp)
+        {
+            var status = new Status(
+                InformationType,
+                Status.ErrorSeverity.Fatal,
+                Status.ErrorCode.InvalidIp,
+                string.Empty);
+            status.InvalidInfIpv6.Value = correctIp;
             return User.SendCommand(status);
         }
 
         private async Task BroadcastAllUsersInformation()
         {
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
-            await catalog.BroadcastNewSidInformation(User.Sid);
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
+            var newUserInformation = await User.GetInformationMessage();
+            await catalog.BroadcastNewSidInformation(User.Sid, newUserInformation);
         }
 
         private static readonly InformationMessageHeader InformationType = new InformationMessageHeader();

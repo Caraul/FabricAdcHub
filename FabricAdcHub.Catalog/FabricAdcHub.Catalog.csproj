@@ -80,6 +80,7 @@
     <Compile Include="Catalog.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ServiceEventSource.cs" />
+    <Compile Include="AddedSidInformation.cs" />
     <Compile Include="SidInformation.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -15,9 +15,9 @@ using Microsoft.ServiceFabric.Data;
 using Microsoft.ServiceFabric.Services.Communication.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Runtime;
 using Microsoft.ServiceFabric.Services.Runtime;
+using AddedSidsQueue = Microsoft.ServiceFabric.Data.Collections.IReliableQueue<FabricAdcHub.Catalog.AddedSidInformation>;
 using DeletedSidsQueue = Microsoft.ServiceFabric.Data.Collections.IReliableQueue<string>;
 using SidDictionary = Microsoft.ServiceFabric.Data.Collections.IReliableDictionary<string, FabricAdcHub.Catalog.SidInformation>;
-using StateDictionary = Microsoft.ServiceFabric.Data.Collections.IReliableDictionary<string, bool>;
 
 namespace FabricAdcHub.Catalog
 {
@@ -28,46 +28,10 @@ namespace FabricAdcHub.Catalog
         {
         }
 
-        public async Task Enable()
-        {
-            using (var tx = StateManager.CreateTransaction())
-            {
-                var state = await State;
-                await state.SetAsync(tx, IsEnabled, true);
-                await tx.CommitAsync();
-            }
-
-            ServiceEventSource.Current.Enabled();
-        }
-
-        public async Task Disable()
-        {
-            var state = await State;
-            using (var tx = StateManager.CreateTransaction())
-            {
-                await state.SetAsync(tx, IsEnabled, false);
-                await tx.CommitAsync();
-            }
-
-            await DisconnectAll();
-            var sids = await Sids;
-            await sids.ClearAsync();
-
-            ServiceEventSource.Current.Disabled();
-        }
-
         public async Task<ReservedSid> ReserveSid()
         {
             using (var tx = StateManager.CreateTransaction())
             {
-                var state = await State;
-                var isEnabled = await state.TryGetValueAsync(tx, IsEnabled);
-                if (!isEnabled.HasValue || !isEnabled.Value)
-                {
-                    ServiceEventSource.Current.SidReservationFailed(Status.ErrorCode.HubDisabled.ToString());
-                    return new ReservedSid(Status.ErrorCode.HubDisabled);
-                }
-
                 var sids = await Sids;
                 var newSid = CreateNewSid();
                 while (!await sids.TryAddAsync(tx, newSid, null))
@@ -75,7 +39,7 @@ namespace FabricAdcHub.Catalog
                     if (await sids.GetCountAsync(tx) == MaxSessionsCount)
                     {
                         ServiceEventSource.Current.SidReservationFailed(Status.ErrorCode.HubFull.ToString());
-                        return new ReservedSid(Status.ErrorCode.HubFull);
+                        return ReservedSid.CreateAsError(Status.ErrorCode.HubFull);
                     }
 
                     newSid = CreateNewSid();
@@ -84,7 +48,7 @@ namespace FabricAdcHub.Catalog
                 await tx.CommitAsync();
 
                 ServiceEventSource.Current.SidReserved(newSid);
-                return new ReservedSid(newSid);
+                return ReservedSid.CreateAsSid(newSid);
             }
         }
 
@@ -99,32 +63,19 @@ namespace FabricAdcHub.Catalog
             }
         }
 
-        public async Task BroadcastNewSidInformation(string newSid)
+        public async Task BroadcastNewSidInformation(string newSid, string newSidInformation)
         {
-            var newUser = ActorProxy.Create<IUser>(new ActorId(newSid));
-            var newInformation = await newUser.GetInformation();
-            await ForAllSids(
-                await Sids,
-                async sid =>
-                {
-                    if (sid == newSid)
-                    {
-                        return;
-                    }
-
-                    var user = GetUser(sid);
-                    await user.SendCommand(newInformation);
-                    var information = await user.GetInformation();
-                    await newUser.SendCommand(information);
-                });
-            await newUser.SendCommand(newInformation);
-
-            ServiceEventSource.Current.NewSidInformationBroadcasted(newSid);
+            using (var tx = StateManager.CreateTransaction())
+            {
+                var addedSids = await AddedSids;
+                await addedSids.EnqueueAsync(tx, new AddedSidInformation { Sid = newSid, InformationMessage = newSidInformation });
+                await tx.CommitAsync();
+            }
         }
 
-        public async Task BroadcastCommand(string fromSid, Command command)
+        public async Task BroadcastMessage(string fromSid, string message)
         {
-            ServiceEventSource.Current.Broadcasted(command.ToText());
+            ServiceEventSource.Current.Broadcasted(message);
 
             var maybeSids = await MaybeSids;
             if (!maybeSids.HasValue)
@@ -138,14 +89,14 @@ namespace FabricAdcHub.Catalog
                 {
                     if (sid != fromSid)
                     {
-                        await GetUser(sid).SendCommand(command);
+                        await GetUser(sid).SendMessage(message);
                     }
                 });
         }
 
-        public async Task FeatureBroadcastCommand(string fromSid, Command command)
+        public async Task FeatureBroadcastMessage(string fromSid, List<string> requiredFeatures, List<string> excludedFeatures, string message)
         {
-            ServiceEventSource.Current.FeatureBroadcasted(command.ToText());
+            ServiceEventSource.Current.FeatureBroadcasted(message);
 
             var maybeSids = await MaybeSids;
             if (!maybeSids.HasValue)
@@ -153,16 +104,15 @@ namespace FabricAdcHub.Catalog
                 return;
             }
 
-            var featureMessageType = (FeatureBroadcastMessageHeader)command.Header;
             await ForAllSids(
                 maybeSids.Value,
                 async (sid, data) =>
                 {
                     if (sid != fromSid
-                        && !featureMessageType.RequiredFeatures.Except(data.Features).Any()
-                        && !data.Features.Intersect(featureMessageType.ExcludedFeatures).Any())
+                        && !requiredFeatures.Except(data.Features).Any()
+                        && !data.Features.Intersect(excludedFeatures).Any())
                     {
-                        await GetUser(sid).SendCommand(command);
+                        await GetUser(sid).SendMessage(message);
                     }
                 });
         }
@@ -186,11 +136,20 @@ namespace FabricAdcHub.Catalog
         protected override async Task RunAsync(CancellationToken cancellationToken)
         {
             await InitializeState();
+            var addedSids = await AddedSids;
             var deletedSids = await DeletedSids;
             while (!cancellationToken.IsCancellationRequested)
             {
+                var needCommit = false;
                 using (var tx = StateManager.CreateTransaction())
                 {
+                    var maybeAddedSid = await addedSids.TryDequeueAsync(tx, TimeSpan.MaxValue, cancellationToken);
+                    if (maybeAddedSid.HasValue)
+                    {
+                        await InternalBroadcastNewSidInformation(maybeAddedSid.Value.Sid, maybeAddedSid.Value.InformationMessage);
+                        needCommit = true;
+                    }
+
                     var maybeSid = await deletedSids.TryDequeueAsync(tx, TimeSpan.MaxValue, cancellationToken);
                     if (maybeSid.HasValue)
                     {
@@ -198,18 +157,22 @@ namespace FabricAdcHub.Catalog
                         await DeleteUser(sid);
                         var sids = await Sids;
                         await sids.TryRemoveAsync(tx, sid);
+                        needCommit = true;
+                    }
 
+                    if (needCommit)
+                    {
                         await tx.CommitAsync();
                     }
                 }
             }
         }
 
-        private Task<StateDictionary> State => StateManager.GetOrAddAsync<StateDictionary>(StoredState);
-
         private Task<SidDictionary> Sids => StateManager.GetOrAddAsync<SidDictionary>(StoredSids);
 
         private Task<ConditionalValue<SidDictionary>> MaybeSids => StateManager.TryGetAsync<SidDictionary>(StoredSids);
+
+        private Task<AddedSidsQueue> AddedSids => StateManager.GetOrAddAsync<AddedSidsQueue>(StoredAddedSids);
 
         private Task<DeletedSidsQueue> DeletedSids => StateManager.GetOrAddAsync<DeletedSidsQueue>(StoredDeletedSids);
 
@@ -217,9 +180,8 @@ namespace FabricAdcHub.Catalog
         {
             using (var tx = StateManager.CreateTransaction())
             {
-                var state = await State;
-                await state.AddAsync(tx, IsEnabled, true);
                 await Sids;
+                await AddedSids;
                 await DeletedSids;
                 await tx.CommitAsync();
             }
@@ -232,15 +194,39 @@ namespace FabricAdcHub.Catalog
             return AdcBase32Encoder.Encode(bytes).Substring(0, 4);
         }
 
-        private async Task DisconnectUser(string disconnectingSid)
+        private async Task InternalBroadcastNewSidInformation(string newSid, string newSidInformation)
         {
-            var quitCommand = new Quit(new InformationMessageHeader(), disconnectingSid);
+            var newUser = ActorProxy.Create<IUser>(new ActorId(newSid));
             await ForAllSids(
                 await Sids,
                 async sid =>
                 {
-                    await GetUser(sid).SendCommand(quitCommand);
+                    if (sid == newSid)
+                    {
+                        return;
+                    }
+
+                    var user = GetUser(sid);
+                    await user.SendMessage(newSidInformation);
+                    var information = await user.GetInformationMessage();
+                    await newUser.SendMessage(information);
                 });
+            await newUser.SendMessage(newSidInformation);
+
+            ServiceEventSource.Current.NewSidInformationBroadcasted(newSid);
+        }
+
+        private Task DisconnectUser(string disconnectingSid)
+        {
+            ////var quitCommand = new Quit(new InformationMessageHeader(), disconnectingSid);
+            ////await ForAllSids(
+            ////    await Sids,
+            ////    async sid =>
+            ////    {
+            ////        await GetUser(sid).SendMessage(quitCommand.ToMessage());
+            ////    });
+
+            return Task.CompletedTask;
         }
 
         private async Task DisconnectAll()
@@ -252,7 +238,7 @@ namespace FabricAdcHub.Catalog
                     var user = GetUser(sid);
                     await user.Disconnect(DisconnectReason.HubIsDisabled);
                     var quitCommand = new Quit(new InformationMessageHeader(), sid);
-                    await user.SendCommand(quitCommand);
+                    await user.SendMessage(quitCommand.ToMessage());
                     await user.Close();
                     await DeleteUser(sid);
                 });
@@ -292,10 +278,9 @@ namespace FabricAdcHub.Catalog
             await actorServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);
         }
 
-        private const string StoredState = "state";
         private const string StoredSids = "sids";
+        private const string StoredAddedSids = "addedsids";
         private const string StoredDeletedSids = "deletedsids";
-        private const string IsEnabled = "enabled";
         private const int MaxSessionsCount = 32 * 32 * 32 * 32;
         private readonly Random _random = new Random();
     }

@@ -11,11 +11,11 @@ namespace FabricAdcHub.User.Interfaces
 
         Task Close();
 
-        Task<Information> GetInformation();
+        Task<string> GetInformationMessage();
 
         Task ProcessMessage(string message);
 
-        Task SendCommand(Command command);
+        Task SendMessage(string message);
 
         Task Disconnect(DisconnectReason reason);
     }

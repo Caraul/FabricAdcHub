@@ -1,4 +1,5 @@
-﻿using System.Diagnostics.CodeAnalysis;
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Net;
 using System.Net.Sockets;
@@ -30,8 +31,20 @@ namespace FabricAdcHub.TcpServer
                         while (!_tcpListenerCancellation.IsCancellationRequested)
                         {
                             var tcpClient = await tcpListener.AcceptTcpClientAsync();
-                            await CreateAdcClient(tcpClient);
+                            try
+                            {
+                                await CreateAdcClient(tcpClient);
+                            }
+                            catch (Exception exception)
+                            {
+                                ServiceEventSource.Current.ServiceRequestFailed(tcpClient.Client.RemoteEndPoint.ToString(), exception.ToString());
+                                tcpClient.Close();
+                            }
                         }
+                    }
+                    catch (Exception exception)
+                    {
+                        ServiceEventSource.Current.TcpExchangeFailed(exception.ToString());
                     }
                     finally
                     {

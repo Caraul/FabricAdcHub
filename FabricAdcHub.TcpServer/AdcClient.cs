@@ -24,7 +24,7 @@ namespace FabricAdcHub.TcpServer
 
         public async Task Open(IPAddress clientIPv4, IPAddress clientIPv6)
         {
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric://FabricAdcHub/Catalog"));
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
             var reservation = await catalog.ReserveSid();
             if (reservation.Error != Status.ErrorCode.NoError)
             {
@@ -82,7 +82,7 @@ namespace FabricAdcHub.TcpServer
                     {
                         await InfiniteRead();
                     }
-                    catch (Exception)
+                    finally
                     {
                         var user = ActorProxy.Create<IUser>(new ActorId(_sid));
                         await user.Disconnect(DisconnectReason.NetworkError);
@@ -100,6 +100,11 @@ namespace FabricAdcHub.TcpServer
                 while (true)
                 {
                     var readCount = await _tcpClient.GetStream().ReadAsync(dataBuffer, 0, dataBuffer.Length, _adcListenerCancellation.Token);
+                    if (readCount == 0)
+                    {
+                        return;
+                    }
+
                     var text = Encoding.UTF8.GetString(dataBuffer, 0, readCount);
                     textBuffer.Append(text);
                     if (text.IndexOf('\n') != -1)
@@ -110,7 +115,7 @@ namespace FabricAdcHub.TcpServer
 
                 var user = ActorProxy.Create<IUser>(new ActorId(_sid));
                 var bufferedText = textBuffer.ToString();
-                var messages = bufferedText.Split('\n');
+                var messages = bufferedText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 if (bufferedText.Last() != '\n')
                 {
                     var totalMessageLength = 0;
@@ -136,7 +141,7 @@ namespace FabricAdcHub.TcpServer
 
         private async Task SendCommand(Command command)
         {
-            var message = command.ToText();
+            var message = command.ToMessage();
             ServiceEventSource.Current.AdcMessageSent(message);
 
             var messageBytes = Encoding.UTF8.GetBytes(message + "\n");

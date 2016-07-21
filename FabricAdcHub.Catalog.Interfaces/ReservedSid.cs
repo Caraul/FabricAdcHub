@@ -4,19 +4,25 @@ namespace FabricAdcHub.Catalog.Interfaces
 {
     public class ReservedSid
     {
-        public ReservedSid(string sid)
+        public string Sid { get; set; }
+
+        public Status.ErrorCode Error { get; set; }
+
+        public static ReservedSid CreateAsSid(string sid)
         {
-            Sid = sid;
-            Error = Status.ErrorCode.NoError;
+            return new ReservedSid
+            {
+                Sid = sid,
+                Error = Status.ErrorCode.NoError
+            };
         }
 
-        public ReservedSid(Status.ErrorCode error)
+        public static ReservedSid CreateAsError(Status.ErrorCode error)
         {
-            Error = error;
+            return new ReservedSid
+            {
+                Error = error
+            };
         }
-
-        public string Sid { get; }
-
-        public Status.ErrorCode Error { get; }
     }
 }

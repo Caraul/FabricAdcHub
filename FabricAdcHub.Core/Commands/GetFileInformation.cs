@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using FabricAdcHub.Core.MessageHeaders;
+using FabricAdcHub.Core.Utilites;
 
 namespace FabricAdcHub.Core.Commands
 {
@@ -34,7 +35,7 @@ namespace FabricAdcHub.Core.Commands
         protected override string GetParametersText()
         {
             var getItemType = GetItemType == ItemType.File ? "file" : (GetItemType == ItemType.FileList ? "list" : "tthl");
-            return BuildString(getItemType, Identifier);
+            return BuildString(getItemType, Identifier.Escape());
         }
     }
 }

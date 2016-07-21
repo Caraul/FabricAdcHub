@@ -5,7 +5,7 @@ using Microsoft.ServiceFabric.Actors.Runtime;
 
 namespace FabricAdcHub.User
 {
-    [EventSource(Name = "FabricAdcHub.ServiceFabric-FabricAdcHub.User")]
+    [EventSource(Name = "FabricAdcHub.ServiceFabric-User")]
     internal sealed class ActorEventSource : EventSource
     {
         public static readonly ActorEventSource Current = new ActorEventSource();
