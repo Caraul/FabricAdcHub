@@ -33,5 +33,13 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
                 .ElseSwitchTo(ifChoice.ElseDestination, ifChoice.ElseEffect);
             return stateBuilder;
         }
+
+        public static IStateBuilder<TState, TEvent, TEventParameter>
+            ConfigureElseTransitionAsClass<TState, TEvent, TEventParameter>(
+                this IStateBuilder<TState, TEvent, TEventParameter> stateBuilder,
+                TransitionBase<TState, TEvent, TEventParameter> transition)
+        {
+            return stateBuilder.ElseSwitchTo(transition.Destination);
+        }
     }
 }

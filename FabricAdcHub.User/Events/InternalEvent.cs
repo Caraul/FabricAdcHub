@@ -1,8 +1,10 @@
-﻿namespace FabricAdcHub.User.States
+﻿namespace FabricAdcHub.User.Events
 {
     internal enum InternalEvent
     {
         ClientOpened,
+        AdcMessageReceived,
+        ConnectionTimedOut,
         NetworkErrorOccured
     }
 }

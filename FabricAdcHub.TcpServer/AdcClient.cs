@@ -51,7 +51,7 @@ namespace FabricAdcHub.TcpServer
             {
                 ServiceEventSource.Current.TcpExchangeFailed(exception.ToString());
                 var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-                user.Disconnect(DisconnectReason.NetworkError).Wait();
+                user.DisconnectOnNetworkError().Wait();
             }
         }
 
@@ -85,7 +85,7 @@ namespace FabricAdcHub.TcpServer
                     finally
                     {
                         var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-                        await user.Disconnect(DisconnectReason.NetworkError);
+                        await user.DisconnectOnNetworkError();
                     }
                 },
                 _adcListenerCancellation.Token);

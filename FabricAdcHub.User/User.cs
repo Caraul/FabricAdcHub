@@ -6,7 +6,6 @@ using FabricAdcHub.Core;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.User.Interfaces;
-using FabricAdcHub.User.States;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 
@@ -40,7 +39,8 @@ namespace FabricAdcHub.User
 
             ActorEventSource.Current.Closed(Sid);
 
-            return Task.CompletedTask;
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
+            return catalog.ReleaseSid(Sid);
         }
 
         public Task<string> GetInformationMessage()
@@ -63,17 +63,11 @@ namespace FabricAdcHub.User
                 EnrichInformationMessage(information);
             }
 
-            var state = await _stateMachine.CurrentState.ProcessCommand(command);
-            await SwitchToState(state);
+            await _stateMachine.ProcessCommand(command);
         }
 
         public Task SendCommand(Command command)
         {
-            if (!_stateMachine.CurrentState.IsSendCommandAllowed(command))
-            {
-                return Task.CompletedTask;
-            }
-
             return SendMessage(command.ToMessage());
         }
 
@@ -98,22 +92,9 @@ namespace FabricAdcHub.User
             await UpdateCatalog();
         }
 
-        public async Task Disconnect(DisconnectReason reason)
+        public async Task DisconnectOnNetworkError()
         {
-            switch (reason)
-            {
-                case DisconnectReason.NetworkError:
-                    await _stateMachine.SwitchToState(State.DisconnectedOnNetworkError);
-                    break;
-                case DisconnectReason.ProtocolError:
-                    await _stateMachine.SwitchToState(State.DisconnectedOnProtocolError);
-                    break;
-                case DisconnectReason.HubIsDisabled:
-                    await _stateMachine.SwitchToState(State.DisconnectedOnShutdown);
-                    break;
-                default:
-                    throw new Exception();
-            }
+            await _stateMachine.DisconnectOnNetworkError();
         }
 
         protected override async Task OnActivateAsync()
@@ -123,23 +104,13 @@ namespace FabricAdcHub.User
             ClientIPv4 = IPAddress.Parse(await StateManager.GetOrAddStateAsync(StoredIPv4, AnyIPv4));
             ClientIPv6 = IPAddress.Parse(await StateManager.GetOrAddStateAsync(StoredIPv6, AnyIPv6));
 
-            var state = await StateManager.GetOrAddStateAsync(StoredState, State.Protocol);
-            ActorEventSource.Current.StateInitialized(Sid, state.ToString());
-            _stateMachine = new StateMachine(this);
-            await _stateMachine.Start(state);
+            _stateMachine = new AdcStateMachine(this);
 
             var maybeInformation = await StateManager.TryGetStateAsync<UserInformation>(StoredInfomation);
             if (maybeInformation.HasValue)
             {
                 Information = maybeInformation.Value;
             }
-        }
-
-        private async Task SwitchToState(State state)
-        {
-            ActorEventSource.Current.StateChanged(Sid, _stateMachine.CurrentState.State.ToString(), state.ToString());
-            await StateManager.SetStateAsync(StoredState, state);
-            await _stateMachine.SwitchToState(state);
         }
 
         private void EnrichInformationMessage(Information message)
@@ -163,12 +134,11 @@ namespace FabricAdcHub.User
 
         private const string StoredIPv4 = "ipv4";
         private const string StoredIPv6 = "ipv6";
-        private const string StoredState = "state";
         private const string StoredInfomation = "information";
 
         private static readonly string AnyIPv4 = IPAddress.Any.ToString();
         private static readonly string AnyIPv6 = IPAddress.IPv6Any.ToString();
 
-        private StateMachine _stateMachine;
+        private AdcStateMachine _stateMachine;
     }
 }

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Diagnostics.CodeAnalysis;
 using System.Fabric;
 using System.Net;
 using System.Net.Sockets;
@@ -9,8 +8,7 @@ using Microsoft.ServiceFabric.Services.Communication.Runtime;
 
 namespace FabricAdcHub.TcpServer
 {
-    [SuppressMessage("Microsoft.Design", "CA1001:TypesThatOwnDisposableFieldsShouldBeDisposable", Justification = "Not needed")]
-    public sealed class TcpCommunicationListener : ICommunicationListener
+    public sealed class TcpCommunicationListener : ICommunicationListener, IDisposable
     {
         public TcpCommunicationListener(StatelessServiceContext context)
         {
@@ -81,6 +79,12 @@ namespace FabricAdcHub.TcpServer
             await adcClient.Open(
                 ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv4(),
                 ((IPEndPoint)tcpClient.Client.RemoteEndPoint).Address.MapToIPv6());
+        }
+
+        public void Dispose()
+        {
+            _tcpListenerCancellation.Dispose();
+            _tcpListener?.Dispose();
         }
 
         private readonly StatelessServiceContext _context;

@@ -91,18 +91,23 @@
     <Compile Include="Machinery\Transition.cs" />
     <Compile Include="Machinery\TransitionDescription.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="States\DisconnectedOnShutdownState.cs" />
-    <Compile Include="States\DisconnectedStateBase.cs" />
-    <Compile Include="States\DisconnectedOnNetworkErrorState.cs" />
-    <Compile Include="States\InvalidCommandException.cs" />
+    <Compile Include="AdcStateMachine.cs" />
+    <Compile Include="Events\InternalEvent.cs" />
     <Compile Include="States\NormalState.cs" />
-    <Compile Include="States\State.cs" />
-    <Compile Include="States\DisconnectedOnProtocolErrorState.cs" />
-    <Compile Include="States\StateMachine.cs" />
-    <Compile Include="States\VerifyState.cs" />
+    <Compile Include="States\AdcProtocolState.cs" />
+    <Compile Include="Events\StateMachineEvent.cs" />
+    <Compile Include="States\UnknownState.cs" />
     <Compile Include="States\IdentifyState.cs" />
     <Compile Include="States\ProtocolState.cs" />
     <Compile Include="States\StateBase.cs" />
+    <Compile Include="Transitions\NormalProcessing.cs" />
+    <Compile Include="Transitions\NormalStatusChoice.cs" />
+    <Compile Include="Transitions\IdentifyToNormal.cs" />
+    <Compile Include="Transitions\IdentifyStatusChoice.cs" />
+    <Compile Include="Transitions\ProtocolStatusChoice.cs" />
+    <Compile Include="Transitions\SupportsChoice.cs" />
+    <Compile Include="Transitions\IdentifyToUnknownTransition.cs" />
+    <Compile Include="Transitions\ProtocolToUnknownTransition.cs" />
     <Compile Include="User.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="ActorEventSource.cs" />
@@ -142,6 +147,12 @@
     <Analyzer Include="..\packages\System.Runtime.InteropServices.Analyzers.1.1.0\analyzers\dotnet\cs\System.Runtime.InteropServices.CSharp.Analyzers.dll" />
     <Analyzer Include="..\packages\System.Security.Cryptography.Hashing.Algorithms.Analyzers.1.1.0\analyzers\dotnet\cs\System.Security.Cryptography.Hashing.Algorithms.Analyzers.dll" />
     <Analyzer Include="..\packages\System.Security.Cryptography.Hashing.Algorithms.Analyzers.1.1.0\analyzers\dotnet\cs\System.Security.Cryptography.Hashing.Algorithms.CSharp.Analyzers.dll" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="States\States.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="StateMachine\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\Microsoft.ServiceFabric.Actors.2.1.163\build\Microsoft.ServiceFabric.Actors.targets" Condition="Exists('..\packages\Microsoft.ServiceFabric.Actors.2.1.163\build\Microsoft.ServiceFabric.Actors.targets')" />

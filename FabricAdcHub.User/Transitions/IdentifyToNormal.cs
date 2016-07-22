@@ -17,26 +17,26 @@ namespace FabricAdcHub.User.Transitions
     {
         public IdentifyToNormal(User user)
             : base(
-                new StateMachineEvent(InternalEvent.AdcMessageReceived, new Information(new BroadcastMessageHeader(string.Empty))),
+                new StateMachineEvent(InternalEvent.AdcMessageReceived, CommandType.Information),
                 AdcProtocolState.Normal,
                 AdcProtocolState.Unknown)
         {
             _user = user;
         }
 
-        public override Task<bool> Guard(StateMachineEvent evt, Command parameter)
+        public override async Task<bool> Guard(StateMachineEvent evt, Command parameter)
         {
-            var command = (Information) parameter;
+            var command = (Information)parameter;
             if (!command.Pid.IsDefined)
             {
                 CreateRequiredFieldIsMissing("PD");
-                return Task.FromResult(false);
+                return false;
             }
 
             if (!command.Cid.IsDefined)
             {
                 CreateRequiredFieldIsMissing("ID");
-                return Task.FromResult(false);
+                return false;
             }
 
             var cid = AdcBase32Encoder.Decode(command.Cid.Value);
@@ -45,29 +45,41 @@ namespace FabricAdcHub.User.Transitions
             if (!hash.SequenceEqual(cid))
             {
                 CreateInvalidPid();
-                return Task.FromResult(false);
+                return false;
             }
 
             if (!command.IpAddressV4.IsDefined && !command.IpAddressV6.IsDefined)
             {
                 CreateRequiredFieldIsMissing("I4");
-                return Task.FromResult(false);
+                return false;
             }
 
             if (command.IpAddressV4.IsDefined && command.IpAddressV4.Value != _user.ClientIPv4.ToString())
             {
                 CreateInvalidIPv4(_user.ClientIPv4.ToString());
-                return Task.FromResult(false);
+                return false;
             }
 
             if (command.IpAddressV6.IsDefined && command.IpAddressV6.Value != _user.ClientIPv6.ToString())
             {
                 CreateInvalidIPv6(_user.ClientIPv6.ToString());
-                return Task.FromResult(false);
+                return false;
             }
 
-            // TODO: check nickname uniqueness
-            return Task.FromResult(true);
+            if (!command.Nickname.IsDefined || string.IsNullOrWhiteSpace(command.Nickname.Value))
+            {
+                CreateInvalidNick();
+                return false;
+            }
+
+            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
+            if (!await catalog.ReserveNick(_user.Sid, command.Nickname.Value))
+            {
+                CreateNonUniqueNick();
+                return false;
+            }
+
+            return true;
         }
 
         public override async Task IfEffect(StateMachineEvent evt, Command parameter)
@@ -76,13 +88,13 @@ namespace FabricAdcHub.User.Transitions
             await _user.UpdateInformation(command);
             var hubInformation = CreateHubInformation();
             await _user.SendCommand(hubInformation);
-
-            await BroadcastAllUsersInformation();
         }
 
-        public override Task ElseEffect(StateMachineEvent evt, Command parameter)
+        public override async Task ElseEffect(StateMachineEvent evt, Command parameter)
         {
-            return _user.SendCommand(_errorCommand);
+            await _user.SendCommand(_errorCommand);
+            var quit = new Quit(new InformationMessageHeader(), _user.Sid);
+            await _user.SendCommand(quit);
         }
 
         private void CreateRequiredFieldIsMissing(string fieldName)
@@ -127,6 +139,24 @@ namespace FabricAdcHub.User.Transitions
             _errorCommand = status;
         }
 
+        private void CreateInvalidNick()
+        {
+            _errorCommand = new Status(
+                InformationMessageHeader,
+                Status.ErrorSeverity.Fatal,
+                Status.ErrorCode.NickInvalid,
+                string.Empty);
+        }
+
+        private void CreateNonUniqueNick()
+        {
+            _errorCommand = new Status(
+                InformationMessageHeader,
+                Status.ErrorSeverity.Fatal,
+                Status.ErrorCode.NickTaken,
+                string.Empty);
+        }
+
         private static Information CreateHubInformation()
         {
             var information = new Information(InformationMessageHeader);
@@ -135,13 +165,6 @@ namespace FabricAdcHub.User.Transitions
             information.Description.Value = "Service Fabric ADC Hub";
             information.Features.Value = new HashSet<string>(Features);
             return information;
-        }
-
-        private async Task BroadcastAllUsersInformation()
-        {
-            var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
-            var newUserInformation = await _user.GetInformationMessage();
-            await catalog.BroadcastNewSidInformation(_user.Sid, newUserInformation);
         }
 
         private static readonly string[] Features = { "BASE", "TIGR" };

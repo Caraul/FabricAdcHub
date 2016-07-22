@@ -23,6 +23,7 @@ namespace FabricAdcHub.User
             public const EventKeywords AdcCommand = (EventKeywords)0x2L;
             public const EventKeywords State = (EventKeywords)0x4L;
             public const EventKeywords OnOff = (EventKeywords)0x8L;
+            public const EventKeywords Protocol = (EventKeywords)0x10L;
         }
 
         [NonEvent]
@@ -68,16 +69,16 @@ namespace FabricAdcHub.User
             WriteEvent(ActorHostInitializationFailedEventId, exception);
         }
 
-        [Event(StateInitializedEventId, Level = EventLevel.Verbose, Message = "State for '{0}' initialized to '{1}'", Keywords = Keywords.State)]
-        public void StateInitialized(string sid, string state)
+        [Event(StateEnteredEventId, Level = EventLevel.Verbose, Message = "State for '{0}' entered to '{1}'", Keywords = Keywords.State)]
+        public void StateEntered(string sid, string state)
         {
-            WriteEvent(StateInitializedEventId, sid, state);
+            WriteEvent(StateEnteredEventId, sid, state);
         }
 
-        [Event(StateChangedEventId, Level = EventLevel.Verbose, Message = "State for '{0}' changed from '{1}' to '{2}'", Keywords = Keywords.State)]
-        public void StateChanged(string sid, string oldState, string newState)
+        [Event(StateExitedEventId, Level = EventLevel.Verbose, Message = "State for '{0}' exited from '{1}'", Keywords = Keywords.State)]
+        public void StateExited(string sid, string state)
         {
-            WriteEvent(StateChangedEventId, sid, oldState, newState);
+            WriteEvent(StateExitedEventId, sid, state);
         }
 
         [Event(OpenedEventId, Level = EventLevel.Verbose, Message = "User '{0}' is opened", Keywords = Keywords.OnOff)]
@@ -98,6 +99,12 @@ namespace FabricAdcHub.User
             WriteEvent(CommandDeserializationFailedEventId, message);
         }
 
+        [Event(NewSidInformationBroadcastedEventId, Level = EventLevel.Informational, Message = "Information is broadcasted '{0}'", Keywords = Keywords.Protocol)]
+        public void NewSidInformationBroadcasted(string sid)
+        {
+            WriteEvent(NewSidInformationBroadcastedEventId, sid);
+        }
+
         private ActorEventSource()
         {
         }
@@ -106,11 +113,13 @@ namespace FabricAdcHub.User
         private const int ActorMessageEventId = 2;
         private const int ActorHostInitializationFailedEventId = 3;
 
-        private const int StateInitializedEventId = 4;
-        private const int StateChangedEventId = 5;
-        private const int OpenedEventId = 6;
-        private const int ClosedEventId = 7;
-        private const int CommandDeserializationFailedEventId = 8;
+        private const int StateEnteredEventId = 5;
+        private const int StateExitedEventId = 6;
+        private const int OpenedEventId = 7;
+        private const int ClosedEventId = 8;
+        private const int CommandDeserializationFailedEventId = 9;
+
+        private const int NewSidInformationBroadcastedEventId = 13;
 
         [Event(ActorMessageEventId, Level = EventLevel.Informational, Message = "{9}")]
         private void ActorMessage(

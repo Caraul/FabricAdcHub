@@ -11,10 +11,16 @@ namespace FabricAdcHub.User.Machinery.Building
 
         IStateBuilder<TState, TEvent, TEventParameter> SwitchTo(
             TState destination,
+            TEvent trigger);
+
+        IStateBuilder<TState, TEvent, TEventParameter> SwitchTo(
+            TState destination,
             TEvent trigger,
             Func<TEvent, TEventParameter, Task<bool>> guard,
             Func<TEvent, TEventParameter, Task> effect);
 
         IChoiceBuilder<TState, TEvent, TEventParameter> ChoiceSwitchTo(TEvent trigger);
+
+        IStateBuilder<TState, TEvent, TEventParameter> ElseSwitchTo(TState destination);
     }
 }

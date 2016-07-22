@@ -1,6 +1,5 @@
 ﻿using System.Net;
 using System.Threading.Tasks;
-using FabricAdcHub.Core.Commands;
 using Microsoft.ServiceFabric.Actors;
 
 namespace FabricAdcHub.User.Interfaces
@@ -17,6 +16,6 @@ namespace FabricAdcHub.User.Interfaces
 
         Task SendMessage(string message);
 
-        Task Disconnect(DisconnectReason reason);
+        Task DisconnectOnNetworkError();
     }
 }

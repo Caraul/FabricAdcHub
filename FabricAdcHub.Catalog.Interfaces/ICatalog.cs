@@ -8,9 +8,11 @@ namespace FabricAdcHub.Catalog.Interfaces
     {
         Task<ReservedSid> ReserveSid();
 
-        Task ReleaseSid(string sid);
+        Task<bool> ReserveNick(string sid, string nick);
 
-        Task BroadcastNewSidInformation(string newSid, string newSidInformation);
+        Task<List<string>> ExposeSid(string exposedSid);
+
+        Task ReleaseSid(string sid);
 
         Task BroadcastMessage(string fromSid, string message);
 

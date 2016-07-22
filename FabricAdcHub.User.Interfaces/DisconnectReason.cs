@@ -3,7 +3,6 @@
     public enum DisconnectReason
     {
         NetworkError,
-        ProtocolError,
-        HubIsDisabled
+        ProtocolError
     }
 }
