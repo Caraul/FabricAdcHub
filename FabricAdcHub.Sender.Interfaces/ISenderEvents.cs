@@ -1,8 +1,8 @@
 ﻿using Microsoft.ServiceFabric.Actors;
 
-namespace FabricAdcHub.User.Interfaces
+namespace FabricAdcHub.Sender.Interfaces
 {
-    public interface IUserEvents : IActorEvents
+    public interface ISenderEvents : IActorEvents
     {
         void MessageAvailable(string message);
 

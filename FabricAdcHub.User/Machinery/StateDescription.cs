@@ -72,6 +72,13 @@ namespace FabricAdcHub.User.Machinery
                 _stateDescription.ElseTransition = transition;
                 return this;
             }
+
+            public IStateBuilder<TState, TEvent, TEventParameter> ElseSwitchTo(TState destination, Func<TEvent, TEventParameter, Task> effect)
+            {
+                var transition = new TransitionDescription<TState, TEvent, TEventParameter>(destination, default(TEvent), guard: null, effect: effect);
+                _stateDescription.ElseTransition = transition;
+                return this;
+            }
         }
     }
 }

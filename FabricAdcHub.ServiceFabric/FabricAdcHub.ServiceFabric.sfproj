@@ -28,6 +28,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\FabricAdcHub.Catalog\FabricAdcHub.Catalog.csproj" />
+    <ProjectReference Include="..\FabricAdcHub.Sender\FabricAdcHub.Sender.csproj" />
     <ProjectReference Include="..\FabricAdcHub.TcpServer\FabricAdcHub.TcpServer.csproj" />
     <ProjectReference Include="..\FabricAdcHub.User\FabricAdcHub.User.csproj" />
   </ItemGroup>

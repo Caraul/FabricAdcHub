@@ -5,6 +5,6 @@
         ClientOpened,
         AdcMessageReceived,
         ConnectionTimedOut,
-        NetworkErrorOccured
+        DisconnectOccured
     }
 }

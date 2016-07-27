@@ -6,8 +6,8 @@ namespace FabricAdcHub.Catalog
     {
         public string Nick { get; set; }
 
-        public bool IsInNormalState { get; set; }
-
         public HashSet<string> Features { get; set; }
+
+        public bool IsExposed { get; set; }
     }
 }

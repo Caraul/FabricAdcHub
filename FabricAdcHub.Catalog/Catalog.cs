@@ -8,6 +8,7 @@ using FabricAdcHub.Catalog.Interfaces;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.Core.Utilites;
+using FabricAdcHub.Sender.Interfaces;
 using FabricAdcHub.User.Interfaces;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -58,35 +59,36 @@ namespace FabricAdcHub.Catalog
                 await DisconnectUser(sid);
                 var deletedSids = await DeletedSids;
                 await deletedSids.EnqueueAsync(tx, sid);
+                await tx.CommitAsync();
             }
         }
 
-        public async Task<List<string>> ExposeSid(string exposedSid)
+        public async Task ExposeSid(string exposingSid, string exposingSidInformation)
         {
-            var result = new List<string>();
-
+            var exposingSender = ActorProxy.Create<ISender>(new ActorId(exposingSid));
             using (var tx = StateManager.CreateTransaction())
             {
                 var sids = await Sids;
                 await ForAllSids(
                     sids,
-                    sid =>
+                    async sid =>
                     {
-                        if (sid != exposedSid)
+                        if (sid != exposingSid)
                         {
-                            result.Add(sid);
+                            var sender = ActorProxy.Create<ISender>(new ActorId(sid));
+                            await sender.SendMessage(exposingSidInformation);
+                            var information = await GetUser(sid).GetInformationMessage();
+                            await exposingSender.SendMessage(information);
                         }
-
-                        return Task.CompletedTask;
                     });
 
-                var maybeData = await sids.TryGetValueAsync(tx, exposedSid);
-                await sids.SetAsync(tx, exposedSid, new SidInformation { Nick = maybeData.Value.Nick, IsInNormalState = true, Features = maybeData.Value.Features });
+                await exposingSender.SendMessage(exposingSidInformation);
+
+                var maybeData = await sids.TryGetValueAsync(tx, exposingSid);
+                await sids.SetAsync(tx, exposingSid, new SidInformation { Nick = maybeData.Value.Nick, IsExposed = true, Features = maybeData.Value.Features });
 
                 await tx.CommitAsync();
             }
-
-            return result;
         }
 
         public async Task BroadcastMessage(string fromSid, string message)
@@ -103,10 +105,7 @@ namespace FabricAdcHub.Catalog
                 maybeSids.Value,
                 async sid =>
                 {
-                    if (sid != fromSid)
-                    {
-                        await GetUser(sid).SendMessage(message);
-                    }
+                    await GetSender(sid).SendMessage(message);
                 });
         }
 
@@ -122,13 +121,12 @@ namespace FabricAdcHub.Catalog
 
             await ForAllSids(
                 maybeSids.Value,
-                async (sid, data) =>
+                async (sid, information) =>
                 {
-                    if (sid != fromSid
-                        && !requiredFeatures.Except(data.Features).Any()
-                        && !data.Features.Intersect(excludedFeatures).Any())
+                    if (!requiredFeatures.Except(information.Features).Any()
+                        && !information.Features.Intersect(excludedFeatures).Any())
                     {
-                        await GetUser(sid).SendMessage(message);
+                        await GetSender(sid).SendMessage(message);
                     }
                 });
         }
@@ -143,7 +141,7 @@ namespace FabricAdcHub.Catalog
                 {
                     while (await enumerator.MoveNextAsync(CancellationToken.None))
                     {
-                        if (enumerator.Current.Value.Nick == nick)
+                        if (enumerator.Current.Value != null && enumerator.Current.Value.Nick == nick)
                         {
                             return false;
                         }
@@ -151,7 +149,7 @@ namespace FabricAdcHub.Catalog
                 }
 
                 var maybeData = await sids.TryGetValueAsync(tx, sid);
-                if (maybeData.HasValue)
+                if (maybeData.HasValue && maybeData.Value != null)
                 {
                     await sids.SetAsync(tx, sid, new SidInformation { Nick = nick, Features = maybeData.Value.Features });
                 }
@@ -171,7 +169,7 @@ namespace FabricAdcHub.Catalog
             {
                 var sids = await Sids;
                 var maybeData = await sids.TryGetValueAsync(tx, sid);
-                await sids.SetAsync(tx, sid, new SidInformation { Nick = maybeData.Value.Nick, Features = features });
+                await sids.SetAsync(tx, sid, new SidInformation { Nick = maybeData.Value.Nick, IsExposed = maybeData.Value.IsExposed, Features = features });
                 await tx.CommitAsync();
             }
 
@@ -191,14 +189,25 @@ namespace FabricAdcHub.Catalog
             {
                 using (var tx = StateManager.CreateTransaction())
                 {
-                    var maybeSid = await deletedSids.TryDequeueAsync(tx, TimeSpan.MaxValue, cancellationToken);
-                    if (maybeSid.HasValue)
+                    try
                     {
-                        var sid = maybeSid.Value;
-                        await DeleteUser(sid);
-                        var sids = await Sids;
-                        await sids.TryRemoveAsync(tx, sid);
-                        await tx.CommitAsync();
+                        var maybeSid = await deletedSids.TryDequeueAsync(tx);
+                        if (maybeSid.HasValue)
+                        {
+                            var sid = maybeSid.Value;
+                            await DeleteUser(sid);
+                            var sids = await Sids;
+                            await sids.TryRemoveAsync(tx, sid);
+                            await tx.CommitAsync();
+                        }
+                        else
+                        {
+                            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+                        }
+                    }
+                    catch (TimeoutException)
+                    {
+                        Thread.Sleep(TimeSpan.FromSeconds(new Random().Next(60, 180)));
                     }
                 }
             }
@@ -229,18 +238,26 @@ namespace FabricAdcHub.Catalog
 
         private async Task DisconnectUser(string disconnectingSid)
         {
-            var quitCommand = new Quit(new InformationMessageHeader(), disconnectingSid);
-            await ForAllSids(
-                await Sids,
-                async sid =>
+            using (var tx = StateManager.CreateTransaction())
+            {
+                var sids = await Sids;
+                var maybeData = await sids.TryGetValueAsync(tx, disconnectingSid);
+                if (maybeData.HasValue && maybeData.Value.IsExposed)
                 {
-                    if (sid == disconnectingSid)
-                    {
-                        return;
-                    }
+                    var quitCommand = new Quit(new InformationMessageHeader(), disconnectingSid);
+                    await ForAllSids(
+                        await Sids,
+                        async sid =>
+                        {
+                            if (sid == disconnectingSid)
+                            {
+                                return;
+                            }
 
-                    await GetUser(sid).SendMessage(quitCommand.ToMessage());
-                });
+                            await GetSender(sid).SendMessage(quitCommand.ToMessage());
+                        });
+                }
+            }
         }
 
         private Task ForAllSids(SidDictionary sids, Func<string, Task> process)
@@ -257,7 +274,10 @@ namespace FabricAdcHub.Catalog
                 {
                     while (await enumerator.MoveNextAsync(CancellationToken.None))
                     {
-                        await process(enumerator.Current.Key, enumerator.Current.Value);
+                        if (enumerator.Current.Value != null && enumerator.Current.Value.IsExposed)
+                        {
+                            await process(enumerator.Current.Key, enumerator.Current.Value);
+                        }
                     }
                 }
             }
@@ -268,13 +288,20 @@ namespace FabricAdcHub.Catalog
             return ActorProxy.Create<IUser>(new ActorId(sid));
         }
 
+        private static ISender GetSender(string sid)
+        {
+            return ActorProxy.Create<ISender>(new ActorId(sid));
+        }
+
         private static async Task DeleteUser(string sid)
         {
             ServiceEventSource.Current.SidReleased(sid);
 
             var actorId = new ActorId(sid);
-            var actorServiceProxy = ActorServiceProxy.Create(new Uri("fabric:/FabricAdcHub/UserActorService"), actorId);
-            await actorServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);
+            var userServiceProxy = ActorServiceProxy.Create(new Uri("fabric:/FabricAdcHub.ServiceFabric/UserActorService"), actorId);
+            await userServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);
+            var senderServiceProxy = ActorServiceProxy.Create(new Uri("fabric:/FabricAdcHub.ServiceFabric/SenderActorService"), actorId);
+            await senderServiceProxy.DeleteActorAsync(actorId, CancellationToken.None);
         }
 
         private const string StoredSids = "sids";

@@ -10,7 +10,7 @@ namespace FabricAdcHub.Catalog.Interfaces
 
         Task<bool> ReserveNick(string sid, string nick);
 
-        Task<List<string>> ExposeSid(string exposedSid);
+        Task ExposeSid(string exposingSid, string exposingSidInformation);
 
         Task ReleaseSid(string sid);
 

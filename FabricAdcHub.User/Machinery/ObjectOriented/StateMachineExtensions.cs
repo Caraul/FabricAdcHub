@@ -39,7 +39,7 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
                 this IStateBuilder<TState, TEvent, TEventParameter> stateBuilder,
                 TransitionBase<TState, TEvent, TEventParameter> transition)
         {
-            return stateBuilder.ElseSwitchTo(transition.Destination);
+            return stateBuilder.ElseSwitchTo(transition.Destination, transition.Effect);
         }
     }
 }

@@ -243,3 +243,6 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+
+!FabricAdcHub.User/
+!FabricAdcHub.User.Interfaces/

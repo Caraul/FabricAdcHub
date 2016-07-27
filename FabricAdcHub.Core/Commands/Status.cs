@@ -105,7 +105,7 @@ namespace FabricAdcHub.Core.Commands
                 .Set(InvalidInfField)
                 .Set(InvalidInfIpv4)
                 .Set(InvalidInfIpv6);
-            var codeText = $"{Severity}{Code}";
+            var codeText = $"{Severity:d}{Code:d}";
             return BuildString(codeText, Description.Escape(), namedFlags.ToText());
         }
     }

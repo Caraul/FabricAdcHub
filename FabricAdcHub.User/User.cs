@@ -1,11 +1,16 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
 using FabricAdcHub.Core;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
+using FabricAdcHub.Sender.Interfaces;
 using FabricAdcHub.User.Interfaces;
+using Microsoft.ServiceFabric.Actors;
+using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Actors.Runtime;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 
@@ -29,13 +34,15 @@ namespace FabricAdcHub.User
             await StateManager.SetStateAsync(StoredIPv6, clientIPv6.ToString());
             ClientIPv6 = clientIPv6;
 
+            await _stateMachine.Open();
+
             ActorEventSource.Current.Opened(Sid);
         }
 
         public Task Close()
         {
-            var events = GetEvent<IUserEvents>();
-            events.Closed();
+            var sender = ActorProxy.Create<ISender>(new ActorId(Sid));
+            sender.Close();
 
             ActorEventSource.Current.Closed(Sid);
 
@@ -63,19 +70,8 @@ namespace FabricAdcHub.User
                 EnrichInformationMessage(information);
             }
 
+            ActorEventSource.Current.CommandReceived(Sid, message);
             await _stateMachine.ProcessCommand(command);
-        }
-
-        public Task SendCommand(Command command)
-        {
-            return SendMessage(command.ToMessage());
-        }
-
-        public Task SendMessage(string message)
-        {
-            var events = GetEvent<IUserEvents>();
-            events.MessageAvailable(message);
-            return Task.CompletedTask;
         }
 
         public async Task UpdateInformation(Information message)
@@ -92,7 +88,7 @@ namespace FabricAdcHub.User
             await UpdateCatalog();
         }
 
-        public async Task DisconnectOnNetworkError()
+        public async Task CloseOnDisconnect()
         {
             await _stateMachine.DisconnectOnNetworkError();
         }

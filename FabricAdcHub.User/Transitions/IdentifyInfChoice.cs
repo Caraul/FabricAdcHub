@@ -7,16 +7,16 @@ using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.Core.Utilites;
 using FabricAdcHub.User.Events;
-using FabricAdcHub.User.Machinery.ObjectOriented;
 using FabricAdcHub.User.States;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.User.Transitions
 {
-    internal class IdentifyToNormal : IfChoiceBase<AdcProtocolState, StateMachineEvent, Command>
+    internal class IdentifyInfChoice : AdcIfChoiceBase
     {
-        public IdentifyToNormal(User user)
+        public IdentifyInfChoice(User user)
             : base(
+                user,
                 new StateMachineEvent(InternalEvent.AdcMessageReceived, CommandType.Information),
                 AdcProtocolState.Normal,
                 AdcProtocolState.Unknown)
@@ -87,14 +87,14 @@ namespace FabricAdcHub.User.Transitions
             var command = (Information)parameter;
             await _user.UpdateInformation(command);
             var hubInformation = CreateHubInformation();
-            await _user.SendCommand(hubInformation);
+            await Sender.SendMessage(hubInformation.ToMessage());
         }
 
         public override async Task ElseEffect(StateMachineEvent evt, Command parameter)
         {
-            await _user.SendCommand(_errorCommand);
+            await Sender.SendMessage(_errorCommand.ToMessage());
             var quit = new Quit(new InformationMessageHeader(), _user.Sid);
-            await _user.SendCommand(quit);
+            await Sender.SendMessage(quit.ToMessage());
         }
 
         private void CreateRequiredFieldIsMissing(string fieldName)

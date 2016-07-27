@@ -19,6 +19,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Catalog", "Fab
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Catalog.Interfaces", "FabricAdcHub.Catalog.Interfaces\FabricAdcHub.Catalog.Interfaces.csproj", "{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{22294036-FFFD-4E8F-91B1-CF8F56DDD295}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Sender", "FabricAdcHub.Sender\FabricAdcHub.Sender.csproj", "{7EED00B6-09E2-4E85-B2F1-FAE705B30760}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FabricAdcHub.Sender.Interfaces", "FabricAdcHub.Sender.Interfaces\FabricAdcHub.Sender.Interfaces.csproj", "{2DEAA19F-F966-4DE4-8117-729EA27F17CE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -59,6 +69,14 @@ Global
 		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Debug|x64.Build.0 = Debug|x64
 		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Release|x64.ActiveCfg = Release|x64
 		{7FAD1F27-A97D-4B1B-90C2-DAEA85AAD79C}.Release|x64.Build.0 = Release|x64
+		{7EED00B6-09E2-4E85-B2F1-FAE705B30760}.Debug|x64.ActiveCfg = Debug|x64
+		{7EED00B6-09E2-4E85-B2F1-FAE705B30760}.Debug|x64.Build.0 = Debug|x64
+		{7EED00B6-09E2-4E85-B2F1-FAE705B30760}.Release|x64.ActiveCfg = Release|x64
+		{7EED00B6-09E2-4E85-B2F1-FAE705B30760}.Release|x64.Build.0 = Release|x64
+		{2DEAA19F-F966-4DE4-8117-729EA27F17CE}.Debug|x64.ActiveCfg = Debug|x64
+		{2DEAA19F-F966-4DE4-8117-729EA27F17CE}.Debug|x64.Build.0 = Debug|x64
+		{2DEAA19F-F966-4DE4-8117-729EA27F17CE}.Release|x64.ActiveCfg = Release|x64
+		{2DEAA19F-F966-4DE4-8117-729EA27F17CE}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -8,7 +8,13 @@
     <Parameter Name="UserActorService_PartitionCount" DefaultValue="10" />
     <Parameter Name="UserActorService_MinReplicaSetSize" DefaultValue="3" />
     <Parameter Name="UserActorService_TargetReplicaSetSize" DefaultValue="3" />
+    <Parameter Name="SenderActorService_PartitionCount" DefaultValue="10" />
+    <Parameter Name="SenderActorService_MinReplicaSetSize" DefaultValue="1" />
+    <Parameter Name="SenderActorService_TargetReplicaSetSize" DefaultValue="1" />
   </Parameters>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="FabricAdcHub.SenderPkg" ServiceManifestVersion="1.0.0" />
+  </ServiceManifestImport>
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="FabricAdcHub.CatalogPkg" ServiceManifestVersion="1.0.0" />
     <ConfigOverrides />
@@ -34,6 +40,11 @@
     <Service Name="UserActorService" GeneratedIdRef="4d4bfb8a-ed7a-48f7-9773-dc9c074cf985|Volatile">
       <StatefulService ServiceTypeName="UserActorServiceType" TargetReplicaSetSize="[UserActorService_TargetReplicaSetSize]" MinReplicaSetSize="[UserActorService_MinReplicaSetSize]">
         <UniformInt64Partition PartitionCount="[UserActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+      </StatefulService>
+    </Service>
+    <Service Name="SenderActorService" GeneratedIdRef="ef605142-b8ad-4b61-a425-3226a2f48fc4|None">
+      <StatefulService ServiceTypeName="SenderActorServiceType" TargetReplicaSetSize="[SenderActorService_TargetReplicaSetSize]" MinReplicaSetSize="[SenderActorService_MinReplicaSetSize]">
+        <UniformInt64Partition PartitionCount="[SenderActorService_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
       </StatefulService>
     </Service>
   </DefaultServices>

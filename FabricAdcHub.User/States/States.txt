@@ -1,0 +1,19 @@
+﻿Unknown -> OPEN -> Protocol
+Unknown -> * -> Unknown
+
+Protocol -> SUP -> valid -> Identify
+								-> invalid -> STA,Closed,Release/Unknown
+Protocol -> STA -> normal -> Protocol
+								-> error -> Closed,Release/Unknown
+Protocol -> * -> STA/Unknown
+
+Identify -> INF -> valid -> Normal
+								-> invalid -> STA,QUI,Closed,Release/Unknown
+Identify -> STA -> normal -> Identify
+								-> error -> QUI,Closed,Release/Unknown
+Identify -> * -> STA,QUI,Closed,Release/Unknown
+
+Normal -> STA -> normal -> Normal
+							-> error -> QUI,Closed,Release/Unknown
+Normal -> TCPERR -> Closed,Release/Unknown
+Normal -> * -> Normal

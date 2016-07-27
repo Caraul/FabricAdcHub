@@ -22,5 +22,7 @@ namespace FabricAdcHub.User.Machinery.Building
         IChoiceBuilder<TState, TEvent, TEventParameter> ChoiceSwitchTo(TEvent trigger);
 
         IStateBuilder<TState, TEvent, TEventParameter> ElseSwitchTo(TState destination);
+
+        IStateBuilder<TState, TEvent, TEventParameter> ElseSwitchTo(TState destination, Func<TEvent, TEventParameter, Task> effect);
     }
 }

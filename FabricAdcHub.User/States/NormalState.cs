@@ -3,10 +3,7 @@ using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.User.Events;
-using FabricAdcHub.User.Interfaces;
 using FabricAdcHub.User.Machinery;
-using Microsoft.ServiceFabric.Actors;
-using Microsoft.ServiceFabric.Actors.Client;
 using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.User.States
@@ -28,16 +25,8 @@ namespace FabricAdcHub.User.States
         {
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
             var newUserInformation = await User.GetInformationMessage();
-            var sids = await catalog.ExposeSid(User.Sid);
-            foreach (var sid in sids)
-            {
-                var user = ActorProxy.Create<IUser>(new ActorId(sid));
-                await user.SendMessage(newUserInformation);
-                var information = await user.GetInformationMessage();
-                await User.SendMessage(information);
-            }
+            await catalog.ExposeSid(User.Sid, newUserInformation);
 
-            await User.SendMessage(newUserInformation);
             ActorEventSource.Current.NewSidInformationBroadcasted(User.Sid);
         }
     }

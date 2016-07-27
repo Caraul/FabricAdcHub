@@ -101,7 +101,7 @@ namespace FabricAdcHub.TcpServer
             WriteEvent(TcpExchangeEndedEventId, ipAddress);
         }
 
-        [Event(TcpExchangeFailedEventId, Level = EventLevel.Error, Message = "TCP exchange failed", Keywords = Keywords.TcpExchange)]
+        [Event(TcpExchangeFailedEventId, Level = EventLevel.Error, Message = "TCP exchange failed with '{0}'", Keywords = Keywords.TcpExchange)]
         public void TcpExchangeFailed(string exception)
         {
             WriteEvent(TcpExchangeFailedEventId, exception);

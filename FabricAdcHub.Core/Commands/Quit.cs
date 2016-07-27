@@ -19,7 +19,7 @@ namespace FabricAdcHub.Core.Commands
         }
 
         public Quit(MessageHeader header, string sid)
-            : base(header, CommandType.Sid)
+            : base(header, CommandType.Quit)
         {
             Sid = sid;
         }

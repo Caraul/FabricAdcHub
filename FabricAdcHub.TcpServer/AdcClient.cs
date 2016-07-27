@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
+using FabricAdcHub.Sender.Interfaces;
 using FabricAdcHub.User.Interfaces;
 using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Client;
@@ -15,7 +16,7 @@ using Microsoft.ServiceFabric.Services.Remoting.Client;
 
 namespace FabricAdcHub.TcpServer
 {
-    internal class AdcClient : IUserEvents, IDisposable
+    internal class AdcClient : ISenderEvents, IDisposable
     {
         public AdcClient(TcpClient tcpClient)
         {
@@ -35,10 +36,10 @@ namespace FabricAdcHub.TcpServer
             }
 
             _sid = reservation.Sid;
-            var user = ActorProxy.Create<IUser>(new ActorId(_sid));
+            var user = GetUser(_sid);
             await user.Open(clientIPv4, clientIPv6);
-            RunInfiniteRead();
-            await user.SubscribeAsync<IUserEvents>(this);
+            await GetSender(_sid).SubscribeAsync<ISenderEvents>(this);
+            _adcReader = RunInfiniteRead();
         }
 
         public void MessageAvailable(string message)
@@ -50,48 +51,38 @@ namespace FabricAdcHub.TcpServer
             catch (Exception exception)
             {
                 ServiceEventSource.Current.TcpExchangeFailed(exception.ToString());
-                var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-                user.DisconnectOnNetworkError().Wait();
+                DisconnectOnWrite().Wait();
             }
         }
 
         public void Closed()
         {
-            ServiceEventSource.Current.TcpExchangeEnded(_tcpClient.Client.RemoteEndPoint.ToString());
-
-            var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-            user.UnsubscribeAsync<IUserEvents>(this).Wait();
-            Dispose();
+            DisconnectOnClosed().Wait();
         }
 
         public void Dispose()
         {
-            _adcListenerCancellation.Cancel();
-            _adcListener?.Wait();
-            _adcListener?.Dispose();
             _adcListenerCancellation.Dispose();
             _tcpClient.Dispose();
         }
 
-        private void RunInfiniteRead()
+        private async Task RunInfiniteRead()
         {
-            _adcListener = Task.Run(
-                async () =>
+            try
+            {
+                if (!await InfiniteRead())
                 {
-                    try
-                    {
-                        await InfiniteRead();
-                    }
-                    finally
-                    {
-                        var user = ActorProxy.Create<IUser>(new ActorId(_sid));
-                        await user.DisconnectOnNetworkError();
-                    }
-                },
-                _adcListenerCancellation.Token);
+                    await DisconnectOnRead();
+                }
+            }
+            catch (Exception exception)
+            {
+                ServiceEventSource.Current.TcpExchangeFailed(exception.ToString());
+                await DisconnectOnRead();
+            }
         }
 
-        private async Task InfiniteRead()
+        private async Task<bool> InfiniteRead()
         {
             var textBuffer = new StringBuilder();
             var dataBuffer = new byte[256];
@@ -102,7 +93,7 @@ namespace FabricAdcHub.TcpServer
                     var readCount = await _tcpClient.GetStream().ReadAsync(dataBuffer, 0, dataBuffer.Length, _adcListenerCancellation.Token);
                     if (readCount == 0)
                     {
-                        return;
+                        return false;
                     }
 
                     var text = Encoding.UTF8.GetString(dataBuffer, 0, readCount);
@@ -113,7 +104,6 @@ namespace FabricAdcHub.TcpServer
                     }
                 }
 
-                var user = ActorProxy.Create<IUser>(new ActorId(_sid));
                 var bufferedText = textBuffer.ToString();
                 var messages = bufferedText.Split(new[] { '\n' }, StringSplitOptions.RemoveEmptyEntries);
                 if (bufferedText.Last() != '\n')
@@ -121,7 +111,7 @@ namespace FabricAdcHub.TcpServer
                     var totalMessageLength = 0;
                     for (var index = 0; index != messages.Length - 1; index++)
                     {
-                        await ReceiveMessage(user, messages[index]);
+                        await ReceiveMessage(messages[index]);
                         totalMessageLength += messages[index].Length + 1;
                     }
 
@@ -131,12 +121,14 @@ namespace FabricAdcHub.TcpServer
                 {
                     for (var index = 0; index != messages.Length; index++)
                     {
-                        await ReceiveMessage(user, messages[index]);
+                        await ReceiveMessage(messages[index]);
                     }
 
                     textBuffer.Clear();
                 }
             }
+
+            return true;
         }
 
         private async Task SendCommand(Command command)
@@ -156,16 +148,56 @@ namespace FabricAdcHub.TcpServer
             _tcpClient.GetStream().Write(messageBytes, 0, messageBytes.Length);
         }
 
-        private static async Task ReceiveMessage(IUser user, string message)
+        private async Task ReceiveMessage(string message)
         {
             ServiceEventSource.Current.AdcMessageReceived(message);
 
-            await user.ProcessMessage(message);
+            await GetUser(_sid).ProcessMessage(message);
+        }
+
+        private async Task DisconnectOnRead()
+        {
+            ServiceEventSource.Current.TcpExchangeEnded("Read failed - " + _tcpClient.Client.RemoteEndPoint);
+
+            await GetSender(_sid).UnsubscribeAsync<ISenderEvents>(this);
+            Dispose();
+            await GetUser(_sid).CloseOnDisconnect();
+        }
+
+        private async Task DisconnectOnWrite()
+        {
+            ServiceEventSource.Current.TcpExchangeEnded("Write failed - " + _tcpClient.Client.RemoteEndPoint);
+
+            await GetSender(_sid).UnsubscribeAsync<ISenderEvents>(this);
+            _adcListenerCancellation.Cancel();
+            await _adcReader;
+            Dispose();
+            await GetUser(_sid).CloseOnDisconnect();
+        }
+
+        private async Task DisconnectOnClosed()
+        {
+            ServiceEventSource.Current.TcpExchangeEnded("Closed - " + _tcpClient.Client.RemoteEndPoint);
+
+            await GetSender(_sid).UnsubscribeAsync<ISenderEvents>(this);
+            _adcListenerCancellation.Cancel();
+            await _adcReader;
+            Dispose();
+        }
+
+        private static IUser GetUser(string sid)
+        {
+            return ActorProxy.Create<IUser>(new ActorId(sid));
+        }
+
+        private static ISender GetSender(string sid)
+        {
+            return ActorProxy.Create<ISender>(new ActorId(sid));
         }
 
         private readonly TcpClient _tcpClient;
         private readonly CancellationTokenSource _adcListenerCancellation = new CancellationTokenSource();
-        private Task _adcListener;
+        private Task _adcReader;
         private string _sid;
     }
 }

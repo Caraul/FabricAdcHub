@@ -105,6 +105,12 @@ namespace FabricAdcHub.User
             WriteEvent(NewSidInformationBroadcastedEventId, sid);
         }
 
+        [Event(CommandReceivedEventId, Level = EventLevel.Informational, Message = "User '{0}', command received '{1}' ", Keywords = Keywords.Protocol)]
+        public void CommandReceived(string sid, string message)
+        {
+            WriteEvent(CommandReceivedEventId, sid, message);
+        }
+
         private ActorEventSource()
         {
         }
@@ -120,6 +126,7 @@ namespace FabricAdcHub.User
         private const int CommandDeserializationFailedEventId = 9;
 
         private const int NewSidInformationBroadcastedEventId = 13;
+        private const int CommandReceivedEventId = 15;
 
         [Event(ActorMessageEventId, Level = EventLevel.Informational, Message = "{9}")]
         private void ActorMessage(

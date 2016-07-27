@@ -6,7 +6,7 @@ namespace FabricAdcHub.User.Events
     internal class StateMachineEvent : IEquatable<StateMachineEvent>
     {
         public static readonly StateMachineEvent ClientOpened = new StateMachineEvent(InternalEvent.ClientOpened);
-        public static readonly StateMachineEvent NetworkErrorOccured = new StateMachineEvent(InternalEvent.NetworkErrorOccured);
+        public static readonly StateMachineEvent DisconnectOccured = new StateMachineEvent(InternalEvent.DisconnectOccured);
 
         public StateMachineEvent(InternalEvent internalEvent)
             : this(internalEvent, null)

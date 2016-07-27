@@ -90,25 +90,13 @@ namespace FabricAdcHub.Catalog
             WriteEvent(ServiceRequestFailedEventId, exception);
         }
 
-        [Event(EnabledEventId, Level = EventLevel.Informational, Message = "Hub is enabled", Keywords = Keywords.OnOff)]
-        public void Enabled()
-        {
-            WriteEvent(EnabledEventId);
-        }
-
-        [Event(DisabledEventId, Level = EventLevel.Informational, Message = "Hub is disabled", Keywords = Keywords.OnOff)]
-        public void Disabled()
-        {
-            WriteEvent(DisabledEventId);
-        }
-
         [Event(SidReservedEventId, Level = EventLevel.Informational, Message = "Sid '{0}' is reserved", Keywords = Keywords.Sid)]
         public void SidReserved(string sid)
         {
             WriteEvent(SidReservedEventId, sid);
         }
 
-        [Event(SidReleasedEventId, Level = EventLevel.Informational, Message = "Sid '{0}' is relased", Keywords = Keywords.Sid)]
+        [Event(SidReleasedEventId, Level = EventLevel.Informational, Message = "Sid '{0}' is released", Keywords = Keywords.Sid)]
         public void SidReleased(string sid)
         {
             WriteEvent(SidReleasedEventId, sid);
@@ -156,8 +144,6 @@ namespace FabricAdcHub.Catalog
         private const int ServiceRequestStopEventId = 6;
         private const int ServiceRequestFailedEventId = 7;
 
-        private const int EnabledEventId = 8;
-        private const int DisabledEventId = 9;
         private const int SidReservedEventId = 10;
         private const int SidReleasedEventId = 11;
         private const int SidReservationFailedEventId = 12;

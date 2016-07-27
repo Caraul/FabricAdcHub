@@ -113,6 +113,10 @@
       <Project>{35C4BD1B-A42B-45F4-8633-358C74BB2AB6}</Project>
       <Name>FabricAdcHub.Core</Name>
     </ProjectReference>
+    <ProjectReference Include="..\FabricAdcHub.Sender.Interfaces\FabricAdcHub.Sender.Interfaces.csproj">
+      <Project>{2DEAA19F-F966-4DE4-8117-729EA27F17CE}</Project>
+      <Name>FabricAdcHub.Sender.Interfaces</Name>
+    </ProjectReference>
     <ProjectReference Include="..\FabricAdcHub.User.Interfaces\FabricAdcHub.User.Interfaces.csproj">
       <Project>{14581F7B-7E08-4AFC-AB0F-82B33089F23B}</Project>
       <Name>FabricAdcHub.User.Interfaces</Name>

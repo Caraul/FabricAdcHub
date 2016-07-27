@@ -4,7 +4,7 @@ using Microsoft.ServiceFabric.Actors;
 
 namespace FabricAdcHub.User.Interfaces
 {
-    public interface IUser : IActor, IActorEventPublisher<IUserEvents>
+    public interface IUser : IActor
     {
         Task Open(IPAddress clientIPv4, IPAddress clientIPv6);
 
@@ -14,8 +14,6 @@ namespace FabricAdcHub.User.Interfaces
 
         Task ProcessMessage(string message);
 
-        Task SendMessage(string message);
-
-        Task DisconnectOnNetworkError();
+        Task CloseOnDisconnect();
     }
 }
