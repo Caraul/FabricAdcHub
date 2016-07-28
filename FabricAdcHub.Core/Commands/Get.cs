@@ -1,22 +1,19 @@
 ﻿using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
+using FabricAdcHub.Core.Commands.NamedParameters;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
 {
     public sealed class Get : Command
     {
-        public Get(MessageHeader header, IList<string> parameters)
-            : this(
-                  header,
-                  parameters[0] == "file" ? ItemType.File : (parameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList),
-                  parameters[1],
-                  int.Parse(parameters[2]),
-                  int.Parse(parameters[3]))
+        public Get(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Get, namedParameters, originalMessage)
         {
-            var namedFlags = new NamedFlags(parameters.Skip(4));
-            namedFlags.Get(IsRecursive);
+            GetItemType = positionalParameters[0] == "file" ? ItemType.File : (positionalParameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList);
+            Identifier = positionalParameters[1];
+            StartAt = int.Parse(positionalParameters[2]);
+            ByteCount = int.Parse(positionalParameters[3]);
         }
 
         public Get(MessageHeader header, ItemType getItemType, string identifier, int startAt, int byteCount)
@@ -36,7 +33,7 @@ namespace FabricAdcHub.Core.Commands
 
         public int ByteCount { get; }
 
-        public NamedFlag<bool> IsRecursive { get; } = new NamedFlag<bool>("RE");
+        public NamedBool IsRecursive => GetBool("RE");
 
         public enum ItemType
         {
@@ -45,12 +42,10 @@ namespace FabricAdcHub.Core.Commands
             TigerTreeHashList
         }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
             var getItemType = GetItemType == ItemType.File ? "file" : (GetItemType == ItemType.FileList ? "list" : "tthl");
-            var namedFlags = new NamedFlags();
-            namedFlags.Set(IsRecursive);
-            return BuildString(getItemType, Identifier, StartAt.ToString(CultureInfo.InvariantCulture), ByteCount.ToString(CultureInfo.InvariantCulture), namedFlags.ToText());
+            return MessageSerializer.BuildText(getItemType, Identifier, StartAt.ToString(CultureInfo.InvariantCulture), ByteCount.ToString(CultureInfo.InvariantCulture));
         }
     }
 }

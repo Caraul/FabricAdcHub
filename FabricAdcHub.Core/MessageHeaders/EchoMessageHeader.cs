@@ -15,9 +15,9 @@ namespace FabricAdcHub.Core.MessageHeaders
 
         public string TargetSid { get; set; }
 
-        public override string ToText()
+        public override string GetParametersText()
         {
-            return Command.BuildString(Sid, TargetSid);
+            return MessageSerializer.BuildText(Sid, TargetSid);
         }
     }
 }

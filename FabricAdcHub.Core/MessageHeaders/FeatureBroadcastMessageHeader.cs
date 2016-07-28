@@ -27,12 +27,12 @@ namespace FabricAdcHub.Core.MessageHeaders
 
         public IList<string> ExcludedFeatures { get; }
 
-        public override string ToText()
+        public override string GetParametersText()
         {
             var features =
                 string.Join(string.Empty, RequiredFeatures.Select(feature => "+" + feature))
                 + string.Join(string.Empty, ExcludedFeatures.Select(feature => "-" + feature));
-            return Command.BuildString(Sid, features);
+            return MessageSerializer.BuildText(Sid, features);
         }
 
         private void FromText(IList<string> parameters)

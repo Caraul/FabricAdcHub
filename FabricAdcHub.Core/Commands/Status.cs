@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using System.Linq;
+using FabricAdcHub.Core.Commands.NamedParameters;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.Core.Utilites;
 
@@ -7,22 +7,12 @@ namespace FabricAdcHub.Core.Commands
 {
     public sealed class Status : Command
     {
-        public Status(MessageHeader header, IList<string> parameters)
-            : this(
-                  header,
-                  (ErrorSeverity)int.Parse(parameters[0].Substring(0, 1)),
-                  (ErrorCode)int.Parse(parameters[0].Substring(1, 2)),
-                  parameters[1].Unescape())
+        public Status(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Status, namedParameters, originalMessage)
         {
-            new NamedFlags(parameters.Skip(2))
-                .Get(OffendingCommandOrMissingFeature)
-                .Get(SecondsUntilEndOfBan)
-                .Get(Token)
-                .Get(Protocol)
-                .Get(MissingInfField)
-                .Get(InvalidInfField)
-                .Get(InvalidInfIpv4)
-                .Get(InvalidInfIpv6);
+            Severity = (ErrorSeverity)int.Parse(positionalParameters[0].Substring(0, 1));
+            Code = (ErrorCode)int.Parse(positionalParameters[0].Substring(1, 2));
+            Description = positionalParameters[1].Unescape();
         }
 
         public Status(MessageHeader header, ErrorSeverity errorSeverity, ErrorCode errorCode, string description)
@@ -39,21 +29,21 @@ namespace FabricAdcHub.Core.Commands
 
         public string Description { get; }
 
-        public NamedFlag<string> OffendingCommandOrMissingFeature { get; } = new NamedFlag<string>("FC");
+        public NamedString OffendingCommandOrMissingFeature => GetString("FC");
 
-        public NamedFlag<int> SecondsUntilEndOfBan { get; } = new NamedFlag<int>("TL");
+        public NamedInt SecondsUntilEndOfBan => GetInt("TL");
 
-        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
+        public NamedString Token => GetString("TO");
 
-        public NamedFlag<string> Protocol { get; } = new NamedFlag<string>("PR");
+        public NamedString Protocol => GetString("PR");
 
-        public NamedFlag<string> MissingInfField { get; } = new NamedFlag<string>("FM");
+        public NamedString MissingInfField => GetString("FM");
 
-        public NamedFlag<string> InvalidInfField { get; } = new NamedFlag<string>("FB");
+        public NamedString InvalidInfField => GetString("FB");
 
-        public NamedFlag<string> InvalidInfIpv4 { get; } = new NamedFlag<string>("I4");
+        public NamedString InvalidInfIpv4 => GetString("I4");
 
-        public NamedFlag<string> InvalidInfIpv6 { get; } = new NamedFlag<string>("I6");
+        public NamedString InvalidInfIpv6 => GetString("I6");
 
         public enum ErrorSeverity
         {
@@ -94,19 +84,10 @@ namespace FabricAdcHub.Core.Commands
             NoHashSupportOverlapBetweenClients = 54
         }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
-            var namedFlags = new NamedFlags()
-                .Set(OffendingCommandOrMissingFeature)
-                .Set(SecondsUntilEndOfBan)
-                .Set(Token)
-                .Set(Protocol)
-                .Set(MissingInfField)
-                .Set(InvalidInfField)
-                .Set(InvalidInfIpv4)
-                .Set(InvalidInfIpv6);
             var codeText = $"{Severity:d}{Code:d}";
-            return BuildString(codeText, Description.Escape(), namedFlags.ToText());
+            return MessageSerializer.BuildText(codeText, Description.Escape());
         }
     }
 }

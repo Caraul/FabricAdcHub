@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using FabricAdcHub.Catalog.Interfaces;
@@ -25,7 +23,7 @@ namespace FabricAdcHub.User
 
         public IPAddress ClientIPv6 { get; private set; }
 
-        public UserInformation Information { get; private set; } = new UserInformation();
+        public UserInformation Information { get; private set; }
 
         public async Task Open(IPAddress clientIPv4, IPAddress clientIPv6)
         {
@@ -58,7 +56,7 @@ namespace FabricAdcHub.User
         public async Task ProcessMessage(string message)
         {
             Command command;
-            if (!MessageSerializer.TryCreateFromText(message, out command))
+            if (!MessageSerializer.TryCreateFromMessage(message, out command))
             {
                 ActorEventSource.Current.CommandDeserializationFailed(message);
                 return;
@@ -77,15 +75,13 @@ namespace FabricAdcHub.User
         public async Task UpdateInformation(Information message)
         {
             Information.UpdateFromCommand(message);
-            await StateManager.SetStateAsync(StoredInfomation, Information);
-            await UpdateCatalog();
+            await SaveInformationAndUpdateCatalog();
         }
 
         public async Task UpdateInformation(Supports message)
         {
             Information.UpdateFromCommand(message);
-            await StateManager.SetStateAsync(StoredInfomation, Information);
-            await UpdateCatalog();
+            await SaveInformationAndUpdateCatalog();
         }
 
         public async Task CloseOnDisconnect()
@@ -102,11 +98,8 @@ namespace FabricAdcHub.User
 
             _stateMachine = new AdcStateMachine(this);
 
-            var maybeInformation = await StateManager.TryGetStateAsync<UserInformation>(StoredInfomation);
-            if (maybeInformation.HasValue)
-            {
-                Information = maybeInformation.Value;
-            }
+            var maybeInformation = await StateManager.TryGetStateAsync<string>(StoredInfomation);
+            Information = new UserInformation(maybeInformation.HasValue ? maybeInformation.Value : string.Empty);
         }
 
         private void EnrichInformationMessage(Information message)
@@ -122,8 +115,9 @@ namespace FabricAdcHub.User
             }
         }
 
-        private async Task UpdateCatalog()
+        private async Task SaveInformationAndUpdateCatalog()
         {
+            await StateManager.SetStateAsync(StoredInfomation, Information.ToText());
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"));
             await catalog.UpdateSidInformation(Sid, Information.Features);
         }

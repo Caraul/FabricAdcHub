@@ -1,45 +1,29 @@
 ﻿using System.Collections.Generic;
+using FabricAdcHub.Core.Commands.NamedParameters;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
 {
     public sealed class Result : Command
     {
+        public Result(MessageHeader header, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Result, namedParameters, originalMessage)
+        {
+        }
+
         public Result(MessageHeader header)
             : base(header, CommandType.Result)
         {
         }
 
-        public Result(MessageHeader header, IList<string> parameters)
-            : this(header)
-        {
-            new NamedFlags(parameters)
-                .Get(FullFilename)
-                .Get(Size)
-                .Get(AvailableSlots)
-                .Get(Token)
-                .Get(Tth);
-        }
+        public NamedString FullFilename => GetString("FN");
 
-        public NamedFlag<string> FullFilename { get; } = new NamedFlag<string>("FN");
+        public NamedInt Size => GetInt("SI");
 
-        public NamedFlag<int> Size { get; } = new NamedFlag<int>("SI");
+        public NamedInt AvailableSlots => GetInt("SL");
 
-        public NamedFlag<int> AvailableSlots { get; } = new NamedFlag<int>("SL");
+        public NamedString Token => GetString("TO");
 
-        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
-
-        public NamedFlag<string> Tth { get; } = new NamedFlag<string>("TR");
-
-        protected override string GetParametersText()
-        {
-            var namedFlags = new NamedFlags()
-                .Set(FullFilename)
-                .Set(Size)
-                .Set(AvailableSlots)
-                .Set(Token)
-                .Set(Tth);
-            return BuildString(namedFlags.ToText());
-        }
+        public NamedString Tth => GetString("TR");
     }
 }

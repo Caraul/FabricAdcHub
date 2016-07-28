@@ -5,9 +5,11 @@ namespace FabricAdcHub.Core.Commands
 {
     public sealed class ReversedConnectToMe : Command
     {
-        public ReversedConnectToMe(MessageHeader header, IList<string> parameters)
-            : this(header, parameters[0], parameters[1])
+        public ReversedConnectToMe(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.ReversedConnectToMe, namedParameters, originalMessage)
         {
+            Protocol = positionalParameters[0];
+            Token = positionalParameters[1];
         }
 
         public ReversedConnectToMe(MessageHeader header, string protocol, string token)
@@ -21,9 +23,9 @@ namespace FabricAdcHub.Core.Commands
 
         public string Token { get; }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
-            return BuildString(Protocol, Token);
+            return MessageSerializer.BuildText(Protocol, Token);
         }
     }
 }

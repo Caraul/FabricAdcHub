@@ -1,21 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Collections.Generic;
+using FabricAdcHub.Core.Commands.NamedParameters;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
 {
     public sealed class Quit : Command
     {
-        public Quit(MessageHeader header, IList<string> parameters)
-            : this(header, parameters[0])
+        public Quit(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Quit, namedParameters, originalMessage)
         {
-            new NamedFlags(parameters.Skip(1))
-                .Get(InitiatorSid)
-                .Get(SecondsUntilReconnectIsAllowed)
-                .Get(Message)
-                .Get(RedirectTo)
-                .Get(DisconnectAll);
+            Sid = positionalParameters[0];
         }
 
         public Quit(MessageHeader header, string sid)
@@ -26,26 +20,19 @@ namespace FabricAdcHub.Core.Commands
 
         public string Sid { get; }
 
-        public NamedFlag<string> InitiatorSid { get; } = new NamedFlag<string>("ID");
+        public NamedString InitiatorSid => GetString("ID");
 
-        public NamedFlag<int> SecondsUntilReconnectIsAllowed { get; } = new NamedFlag<int>("TL");
+        public NamedInt SecondsUntilReconnectIsAllowed => GetInt("TL");
 
-        public NamedFlag<string> Message { get; } = new NamedFlag<string>("MS");
+        public NamedString Message => GetString("MS");
 
-        public NamedFlag<Uri> RedirectTo { get; } = new NamedFlag<Uri>("RD");
+        public NamedUri RedirectTo => GetUri("RD");
 
-        public NamedFlag<bool> DisconnectAll { get; } = new NamedFlag<bool>("DI");
+        public NamedBool DisconnectAll => GetBool("DI");
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
-            var namedFlags = new NamedFlags()
-                .Set(InitiatorSid)
-                .Set(SecondsUntilReconnectIsAllowed)
-                .Set(Message)
-                .Set(RedirectTo)
-                .Set(DisconnectAll);
-
-            return BuildString(Sid, namedFlags.ToText());
+            return Sid;
         }
     }
 }

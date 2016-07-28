@@ -6,14 +6,13 @@ namespace FabricAdcHub.Core.Commands
 {
     public sealed class Send : Command
     {
-        public Send(MessageHeader header, IList<string> parameters)
-            : this(
-                  header,
-                  parameters[0] == "file" ? ItemType.File : (parameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList),
-                  parameters[1],
-                  int.Parse(parameters[2]),
-                  int.Parse(parameters[3]))
+        public Send(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Send, namedParameters, originalMessage)
         {
+            GetItemType = positionalParameters[0] == "file" ? ItemType.File : (positionalParameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList);
+            Identifier = positionalParameters[1];
+            StartAt = int.Parse(positionalParameters[2]);
+            ByteCount = int.Parse(positionalParameters[3]);
         }
 
         public Send(MessageHeader header, ItemType getItemType, string identifier, int startAt, int byteCount)
@@ -40,10 +39,10 @@ namespace FabricAdcHub.Core.Commands
             TigerTreeHashList
         }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
             var getItemType = GetItemType == ItemType.File ? "file" : (GetItemType == ItemType.FileList ? "list" : "tthl");
-            return BuildString(getItemType, Identifier, StartAt.ToString(CultureInfo.InvariantCulture), ByteCount.ToString(CultureInfo.InvariantCulture));
+            return MessageSerializer.BuildText(getItemType, Identifier, StartAt.ToString(CultureInfo.InvariantCulture), ByteCount.ToString(CultureInfo.InvariantCulture));
         }
     }
 }

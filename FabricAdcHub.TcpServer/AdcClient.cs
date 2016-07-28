@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -48,7 +49,7 @@ namespace FabricAdcHub.TcpServer
             {
                 SendAvailableMessage(message);
             }
-            catch (Exception exception)
+            catch (IOException exception)
             {
                 ServiceEventSource.Current.TcpExchangeFailed(exception.ToString());
                 DisconnectOnWrite().Wait();
@@ -168,7 +169,7 @@ namespace FabricAdcHub.TcpServer
         {
             ServiceEventSource.Current.TcpExchangeEnded("Write failed - " + _tcpClient.Client.RemoteEndPoint);
 
-            await GetSender(_sid).UnsubscribeAsync<ISenderEvents>(this);
+            // unsubscription is unavailable here inside event handling
             _adcListenerCancellation.Cancel();
             await _adcReader;
             Dispose();

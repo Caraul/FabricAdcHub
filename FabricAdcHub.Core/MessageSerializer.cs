@@ -4,6 +4,13 @@ using System.Linq;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
 using FabricAdcHub.Core.Utilites;
+using CommandCreator =
+    System.Func<
+        FabricAdcHub.Core.MessageHeaders.MessageHeader,
+        System.Collections.Generic.IList<string>,
+        System.Collections.Generic.IList<string>,
+        string,
+        FabricAdcHub.Core.Commands.Command>;
 
 namespace FabricAdcHub.Core
 {
@@ -11,18 +18,15 @@ namespace FabricAdcHub.Core
     {
         public const string Separator = " ";
 
-        public static bool TryCreateFromText(string text, out Command command)
+        public static bool TryCreateFromMessage(string message, out Command command)
         {
             command = null;
-            if (string.IsNullOrWhiteSpace(text))
+            if (string.IsNullOrWhiteSpace(message))
             {
                 return false;
             }
 
-            var parts = text
-                .Split(Separator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
-                .Select(part => part.Unescape())
-                .ToArray();
+            var parts = SplitText(message);
             var messageTypeAndName = parts[0];
             if (messageTypeAndName.Length != 4)
             {
@@ -44,23 +48,54 @@ namespace FabricAdcHub.Core
                 return false;
             }
 
-            command = CommandCreators[commandName](messageHeader, parameters.Skip(messageHeader.Type.NumberOfParameters).ToList());
+            var commandType = CommandType.FromText(commandName);
+            var positionalParameters = parameters
+                .Skip(messageHeader.Type.NumberOfParameters)
+                .Take(commandType.NumberOfParameters)
+                .ToList();
+            var namedParameters = parameters
+                .Skip(messageHeader.Type.NumberOfParameters)
+                .Skip(commandType.NumberOfParameters)
+                .ToList();
+            command = CommandCreators[commandName](messageHeader, positionalParameters, namedParameters, message);
             return true;
         }
 
-        private static readonly Dictionary<string, Func<MessageHeader, IList<string>, Command>> CommandCreators = new Dictionary<string, Func<MessageHeader, IList<string>, Command>>
+        public static string BuildText(IEnumerable<string> parts)
         {
-            { CommandType.Supports.Name, (messageHeader, parameters) => new Supports(messageHeader, parameters) },
-            { CommandType.Status.Name, (messageHeader, parameters) => new Status(messageHeader, parameters) },
-            { CommandType.Sid.Name, (messageHeader, parameters) => new Sid(messageHeader, parameters) },
-            { CommandType.Information.Name, (messageHeader, parameters) => new Information(messageHeader, parameters) },
-            { CommandType.GetPassword.Name, (messageHeader, parameters) => new GetPassword(messageHeader, parameters) },
-            { CommandType.ConnectToMe.Name, (messageHeader, parameters) => new ConnectToMe(messageHeader, parameters) },
-            { CommandType.ReversedConnectToMe.Name, (messageHeader, parameters) => new ReversedConnectToMe(messageHeader, parameters) },
-            { CommandType.Quit.Name, (messageHeader, parameters) => new Quit(messageHeader, parameters) },
-            { CommandType.Message.Name, (messageHeader, parameters) => new Msg(messageHeader, parameters) },
-            { CommandType.Search.Name, (messageHeader, parameters) => new Search(messageHeader, parameters) },
-            { CommandType.Result.Name, (messageHeader, parameters) => new Result(messageHeader, parameters) }
+            return BuildText(parts.ToArray());
+        }
+
+        public static string BuildText(params string[] parts)
+        {
+            return string.Join(Separator, parts);
+        }
+
+        public static string[] SplitText(string text)
+        {
+            return text
+                .Split(Separator.ToCharArray(), StringSplitOptions.RemoveEmptyEntries)
+                .Select(part => part.Unescape())
+                .ToArray();
+        }
+
+        private static readonly Dictionary<string, CommandCreator> CommandCreators = new Dictionary<string, CommandCreator>
+        {
+            { CommandType.Supports.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Supports(messageHeader, namedParameters, originalMessage) },
+            { CommandType.Status.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Status(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Sid.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Sid(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Information.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Information(messageHeader, namedParameters, originalMessage) },
+            { CommandType.GetPassword.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new GetPassword(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.ConnectToMe.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new ConnectToMe(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.ReversedConnectToMe.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new ReversedConnectToMe(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Quit.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Quit(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Message.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Msg(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Search.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Search(messageHeader, namedParameters, originalMessage) },
+            { CommandType.Result.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Result(messageHeader, namedParameters, originalMessage) },
+            { CommandType.Password.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Password(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Get.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Get(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.GetFileInformation.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new GetFileInformation(messageHeader, positionalParameters, namedParameters, originalMessage) },
+            { CommandType.Send.Name, (messageHeader, positionalParameters, namedParameters, originalMessage) => new Send(messageHeader, positionalParameters, namedParameters, originalMessage) }
         };
 
         private static readonly Dictionary<char, Func<IList<string>, MessageHeader>> MessageHeaderCreators = new Dictionary<char, Func<IList<string>, MessageHeader>>

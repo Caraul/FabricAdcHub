@@ -6,12 +6,11 @@ namespace FabricAdcHub.Core.Commands
 {
     public sealed class GetFileInformation : Command
     {
-        public GetFileInformation(MessageHeader header, IList<string> parameters)
-            : this(
-                  header,
-                  parameters[0] == "file" ? ItemType.File : (parameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList),
-                  parameters[1])
+        public GetFileInformation(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.GetFileInformation, namedParameters, originalMessage)
         {
+            GetItemType = positionalParameters[0] == "file" ? ItemType.File : (positionalParameters[0] == "list" ? ItemType.FileList : ItemType.TigerTreeHashList);
+            Identifier = positionalParameters[1];
         }
 
         public GetFileInformation(MessageHeader header, ItemType getItemType, string identifier)
@@ -32,10 +31,10 @@ namespace FabricAdcHub.Core.Commands
             TigerTreeHashList
         }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
             var getItemType = GetItemType == ItemType.File ? "file" : (GetItemType == ItemType.FileList ? "list" : "tthl");
-            return BuildString(getItemType, Identifier.Escape());
+            return MessageSerializer.BuildText(getItemType, Identifier.Escape());
         }
     }
 }

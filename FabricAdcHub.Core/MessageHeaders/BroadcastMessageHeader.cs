@@ -16,7 +16,7 @@ namespace FabricAdcHub.Core.MessageHeaders
 
         public override MessageHeaderType Type => MessageHeaderType.Broadcast;
 
-        public override string ToText()
+        public override string GetParametersText()
         {
             return Sid;
         }

@@ -1,4 +1,4 @@
-﻿namespace FabricAdcHub.Core.Commands
+﻿namespace FabricAdcHub.Core.Commands.NamedParameters
 {
     public enum NamedFlagState
     {

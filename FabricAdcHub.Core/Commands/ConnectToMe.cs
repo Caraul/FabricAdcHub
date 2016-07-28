@@ -6,9 +6,12 @@ namespace FabricAdcHub.Core.Commands
 {
     public sealed class ConnectToMe : Command
     {
-        public ConnectToMe(MessageHeader header, IList<string> parameters)
-            : this(header, parameters[0], int.Parse(parameters[1]), parameters[2])
+        public ConnectToMe(MessageHeader header, IList<string> positionalParameters, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.ConnectToMe, namedParameters, originalMessage)
         {
+            Protocol = positionalParameters[0];
+            Port = int.Parse(positionalParameters[1]);
+            Token = positionalParameters[2];
         }
 
         public ConnectToMe(MessageHeader header, string protocol, int port, string token)
@@ -25,9 +28,9 @@ namespace FabricAdcHub.Core.Commands
 
         public string Token { get; }
 
-        protected override string GetParametersText()
+        protected override string GetPositionalParametersText()
         {
-            return BuildString(Protocol, Port.ToString(CultureInfo.InvariantCulture), Token);
+            return MessageSerializer.BuildText(Protocol, Port.ToString(CultureInfo.InvariantCulture), Token);
         }
     }
 }

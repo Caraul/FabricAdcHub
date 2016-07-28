@@ -15,7 +15,7 @@ namespace FabricAdcHub.Core.UnitTests
 
             // act
             var skipParameters = messageHeader.Type.NumberOfParameters;
-            var toText = messageHeader.ToText();
+            var toText = messageHeader.GetParametersText();
 
             // assert
             Assert.Equal(2, skipParameters);

@@ -24,7 +24,7 @@ namespace FabricAdcHub.User.Transitions
             for (var index = 0; index != Features.Length; index++)
             {
                 var feature = Features[index];
-                if (!command.AddFeatures.Contains(feature))
+                if (!command.AddFeatures.Value.Contains(feature))
                 {
                     CreateRequiredFeatureIsMissing(feature);
                     return Task.FromResult(false);

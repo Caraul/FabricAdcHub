@@ -1,97 +1,70 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
+﻿using System.Collections.Generic;
+using FabricAdcHub.Core.Commands.NamedParameters;
 using FabricAdcHub.Core.MessageHeaders;
 
 namespace FabricAdcHub.Core.Commands
 {
     public sealed class Information : Command
     {
+        public Information(MessageHeader header, IList<string> namedParameters, string originalMessage)
+            : base(header, CommandType.Information, namedParameters, originalMessage)
+        {
+        }
+
         public Information(MessageHeader header)
             : base(header, CommandType.Information)
         {
         }
 
-        public Information(MessageHeader header, IList<string> parameters)
-            : this(header)
-        {
-            new NamedFlags(parameters)
-                .Get(Cid)
-                .Get(Pid)
-                .Get(IpAddressV4)
-                .Get(IpAddressV6)
-                .Get(IpAddressV4Port)
-                .Get(IpAddressV6Port)
-                .Get(ShareSize)
-                .Get(SharedFiles)
-                .Get(AgentIdentifier)
-                .Get(MaximumUploadSpeed)
-                .Get(MaximumDownloadSpeed)
-                .Get(MaximumSlots)
-                .Get(AutomaticSlotAllocatorSpeedLimit)
-                .Get(MinimumSlots)
-                .Get(Email)
-                .Get(Nickname)
-                .Get(Description)
-                .Get(HubsAsRegularUser)
-                .Get(HubsAsRegisteredUser)
-                .Get(HubsAsOperator)
-                .Get(Token)
-                .Get(ClientType, value => (ClientTypes)int.Parse(value))
-                .Get(Away, value => (AwayState)int.Parse(value))
-                .Get(Features, value => new HashSet<string>(value.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)))
-                .Get(Referrer);
-        }
+        public NamedString Cid => GetString("ID");
 
-        public NamedFlag<string> Cid { get; } = new NamedFlag<string>("ID");
+        public NamedString Pid => GetString("PD");
 
-        public NamedFlag<string> Pid { get; } = new NamedFlag<string>("PD");
+        public NamedString IpAddressV4 => GetString("I4");
 
-        public NamedFlag<string> IpAddressV4 { get; } = new NamedFlag<string>("I4");
+        public NamedString IpAddressV6 => GetString("I6");
 
-        public NamedFlag<string> IpAddressV6 { get; } = new NamedFlag<string>("I6");
+        public NamedInt IpAddressV4Port => GetInt("U4");
 
-        public NamedFlag<int> IpAddressV4Port { get; } = new NamedFlag<int>("U4");
+        public NamedInt IpAddressV6Port => GetInt("U6");
 
-        public NamedFlag<int> IpAddressV6Port { get; } = new NamedFlag<int>("U6");
+        public NamedInt ShareSize => GetInt("SS");
 
-        public NamedFlag<int> ShareSize { get; } = new NamedFlag<int>("SS");
+        public NamedInt SharedFiles => GetInt("SF");
 
-        public NamedFlag<int> SharedFiles { get; } = new NamedFlag<int>("SF");
+        public NamedString AgentIdentifier => GetString("VE");
 
-        public NamedFlag<string> AgentIdentifier { get; } = new NamedFlag<string>("VE");
+        public NamedInt MaximumUploadSpeed => GetInt("US");
 
-        public NamedFlag<int> MaximumUploadSpeed { get; } = new NamedFlag<int>("US");
+        public NamedInt MaximumDownloadSpeed => GetInt("DS");
 
-        public NamedFlag<int> MaximumDownloadSpeed { get; } = new NamedFlag<int>("DS");
+        public NamedInt MaximumSlots => GetInt("SL");
 
-        public NamedFlag<int> MaximumSlots { get; } = new NamedFlag<int>("SL");
+        public NamedInt AutomaticSlotAllocatorSpeedLimit => GetInt("AS");
 
-        public NamedFlag<int> AutomaticSlotAllocatorSpeedLimit { get; } = new NamedFlag<int>("AS");
+        public NamedInt MinimumSlots => GetInt("AM");
 
-        public NamedFlag<int> MinimumSlots { get; } = new NamedFlag<int>("AM");
+        public NamedString Email => GetString("EM");
 
-        public NamedFlag<string> Email { get; } = new NamedFlag<string>("EM");
+        public NamedString Nickname => GetString("NI");
 
-        public NamedFlag<string> Nickname { get; } = new NamedFlag<string>("NI");
+        public NamedString Description => GetString("DE");
 
-        public NamedFlag<string> Description { get; } = new NamedFlag<string>("DE");
+        public NamedInt HubsAsRegularUser => GetInt("HN");
 
-        public NamedFlag<int> HubsAsRegularUser { get; } = new NamedFlag<int>("HN");
+        public NamedInt HubsAsRegisteredUser => GetInt("HR");
 
-        public NamedFlag<int> HubsAsRegisteredUser { get; } = new NamedFlag<int>("HR");
+        public NamedInt HubsAsOperator => GetInt("HO");
 
-        public NamedFlag<int> HubsAsOperator { get; } = new NamedFlag<int>("HO");
+        public NamedString Token => GetString("TO");
 
-        public NamedFlag<string> Token { get; } = new NamedFlag<string>("TO");
+        public NamedClientTypes ClientType => new NamedClientTypes("CT", NamedFlags);
 
-        public NamedFlag<ClientTypes> ClientType { get; } = new NamedFlag<ClientTypes>("CT");
+        public NamedAwayState Away => new NamedAwayState("AW", NamedFlags);
 
-        public NamedFlag<AwayState> Away { get; } = new NamedFlag<AwayState>("AW");
+        public NamedFeatures Features => new NamedFeatures("SU", NamedFlags);
 
-        public NamedFlag<HashSet<string>> Features { get; } = new NamedFlag<HashSet<string>>("SU");
-
-        public NamedFlag<Uri> Referrer { get; } = new NamedFlag<Uri>("RF");
+        public NamedUri Referrer => GetUri("RF");
 
         public enum ClientTypes
         {
@@ -107,37 +80,6 @@ namespace FabricAdcHub.Core.Commands
         {
             Away = 1,
             ExtendedAway = 2,
-        }
-
-        protected override string GetParametersText()
-        {
-            var namedFlags = new NamedFlags()
-                .Set(Cid)
-                .Set(Pid)
-                .Set(IpAddressV4)
-                .Set(IpAddressV6)
-                .Set(IpAddressV4Port)
-                .Set(IpAddressV6Port)
-                .Set(ShareSize)
-                .Set(SharedFiles)
-                .Set(AgentIdentifier)
-                .Set(MaximumUploadSpeed)
-                .Set(MaximumDownloadSpeed)
-                .Set(MaximumSlots)
-                .Set(AutomaticSlotAllocatorSpeedLimit)
-                .Set(MinimumSlots)
-                .Set(Email)
-                .Set(Nickname)
-                .Set(Description)
-                .Set(HubsAsRegularUser)
-                .Set(HubsAsRegisteredUser)
-                .Set(HubsAsOperator)
-                .Set(Token)
-                .Set(ClientType, value => ((int)value).ToString(CultureInfo.InvariantCulture))
-                .Set(Away, value => value == AwayState.Away ? "1" : "2")
-                .Set(Features, features => string.Join(",", features))
-                .Set(Referrer);
-            return namedFlags.ToText();
         }
     }
 }

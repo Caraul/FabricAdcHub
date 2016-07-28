@@ -32,8 +32,7 @@ namespace FabricAdcHub.User.Transitions
             {
                 await User.UpdateInformation((Information)parameter);
             }
-
-            if (parameter.Type == CommandType.Supports)
+            else if (parameter.Type == CommandType.Supports)
             {
                 await User.UpdateInformation((Supports)parameter);
             }
@@ -41,17 +40,19 @@ namespace FabricAdcHub.User.Transitions
             if (parameter.Header is BroadcastMessageHeader)
             {
                 await BroadcastCommand(parameter);
+                return;
             }
 
             if (parameter.Header is DirectMessageHeader)
             {
                 await DirectCommand(parameter);
+                return;
             }
 
             if (parameter.Header is EchoMessageHeader)
             {
-                await DirectCommand(parameter);
-                await Sender.SendMessage(parameter.ToMessage());
+                await EchoedDirectCommand(parameter);
+                return;
             }
 
             if (parameter.Header is FeatureBroadcastMessageHeader)
@@ -63,14 +64,22 @@ namespace FabricAdcHub.User.Transitions
         protected async Task BroadcastCommand(Command command)
         {
             var catalog = ServiceProxy.Create<ICatalog>(new Uri("fabric:/FabricAdcHub.ServiceFabric/Catalog"), targetReplicaSelector: TargetReplicaSelector.RandomReplica);
-            await catalog.BroadcastMessage(User.Sid, command.ToMessage());
+            await catalog.BroadcastMessage(User.Sid, command.OriginalMessage);
         }
 
         protected async Task DirectCommand(Command command)
         {
             var directMessageType = (DirectMessageHeader)command.Header;
             var sender = ActorProxy.Create<ISender>(new ActorId(directMessageType.TargetSid));
-            await sender.SendMessage(command.ToMessage());
+            await sender.SendMessage(command.OriginalMessage);
+        }
+
+        protected async Task EchoedDirectCommand(Command command)
+        {
+            var directMessageType = (DirectMessageHeader)command.Header;
+            var sender = ActorProxy.Create<ISender>(new ActorId(directMessageType.TargetSid));
+            await sender.SendMessage(command.OriginalMessage);
+            await Sender.SendMessage(command.OriginalMessage);
         }
 
         protected async Task FeatureBroadcastCommand(Command command)

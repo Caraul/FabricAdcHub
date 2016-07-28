@@ -4,7 +4,7 @@
     {
         public override MessageHeaderType Type => MessageHeaderType.Information;
 
-        public override string ToText()
+        public override string GetParametersText()
         {
             return string.Empty;
         }

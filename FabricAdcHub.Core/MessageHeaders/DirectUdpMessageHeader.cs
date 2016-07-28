@@ -13,7 +13,7 @@ namespace FabricAdcHub.Core.MessageHeaders
 
         public string MyCid { get; set; }
 
-        public override string ToText()
+        public override string GetParametersText()
         {
             return MyCid;
         }

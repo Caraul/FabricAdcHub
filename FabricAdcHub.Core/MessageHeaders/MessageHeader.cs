@@ -4,6 +4,6 @@
     {
         public abstract MessageHeaderType Type { get; }
 
-        public abstract string ToText();
+        public abstract string GetParametersText();
     }
 }
