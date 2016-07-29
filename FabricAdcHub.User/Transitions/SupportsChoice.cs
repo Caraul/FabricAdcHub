@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Core.MessageHeaders;
@@ -36,7 +37,7 @@ namespace FabricAdcHub.User.Transitions
 
         public override async Task IfEffect(StateMachineEvent evt, Command parameter)
         {
-            var supportsMessage = new Supports(InformationMessageHeader, Features, Enumerable.Empty<string>());
+            var supportsMessage = new Supports(InformationMessageHeader, new HashSet<string>(Features), null);
             await Sender.SendMessage(supportsMessage.ToMessage());
             var sidMessage = new Sid(new InformationMessageHeader(), User.Sid);
             await Sender.SendMessage(sidMessage.ToMessage());

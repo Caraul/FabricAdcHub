@@ -93,7 +93,7 @@ namespace FabricAdcHub.User
             WriteEvent(ClosedEventId, sid);
         }
 
-        [Event(CommandDeserializationFailedEventId, Level = EventLevel.Warning, Message = "Message '{0}' is not a valid ADC command", Keywords = Keywords.AdcCommand)]
+        [Event(CommandDeserializationFailedEventId, Level = EventLevel.Warning, Message = "Message '{0}' is an unknown ADC command", Keywords = Keywords.AdcCommand)]
         public void CommandDeserializationFailed(string message)
         {
             WriteEvent(CommandDeserializationFailedEventId, message);
@@ -111,6 +111,12 @@ namespace FabricAdcHub.User
             WriteEvent(CommandReceivedEventId, sid, message);
         }
 
+        [Event(CommandProcessingFailedEventId, Level = EventLevel.Warning, Message = "User '{0}', message '{1}' processing failed with '{2}'", Keywords = Keywords.AdcCommand)]
+        public void CommandProcessingFailed(string sid, string message, string exception)
+        {
+            WriteEvent(CommandProcessingFailedEventId, sid, message, exception);
+        }
+
         private ActorEventSource()
         {
         }
@@ -124,6 +130,7 @@ namespace FabricAdcHub.User
         private const int OpenedEventId = 7;
         private const int ClosedEventId = 8;
         private const int CommandDeserializationFailedEventId = 9;
+        private const int CommandProcessingFailedEventId = 10;
 
         private const int NewSidInformationBroadcastedEventId = 13;
         private const int CommandReceivedEventId = 15;

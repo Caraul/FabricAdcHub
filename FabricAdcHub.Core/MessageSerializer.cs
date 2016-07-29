@@ -16,8 +16,6 @@ namespace FabricAdcHub.Core
 {
     public static class MessageSerializer
     {
-        public const string Separator = " ";
-
         public static bool TryCreateFromMessage(string message, out Command command)
         {
             command = null;
@@ -68,7 +66,7 @@ namespace FabricAdcHub.Core
 
         public static string BuildText(params string[] parts)
         {
-            return string.Join(Separator, parts);
+            return string.Join(Separator, parts.Where(part => !string.IsNullOrEmpty(part)));
         }
 
         public static string[] SplitText(string text)
@@ -78,6 +76,8 @@ namespace FabricAdcHub.Core
                 .Select(part => part.Unescape())
                 .ToArray();
         }
+
+        private const string Separator = " ";
 
         private static readonly Dictionary<string, CommandCreator> CommandCreators = new Dictionary<string, CommandCreator>
         {

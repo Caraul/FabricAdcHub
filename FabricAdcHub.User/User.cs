@@ -55,21 +55,28 @@ namespace FabricAdcHub.User
 
         public async Task ProcessMessage(string message)
         {
-            Command command;
-            if (!MessageSerializer.TryCreateFromMessage(message, out command))
+            try
             {
-                ActorEventSource.Current.CommandDeserializationFailed(message);
-                return;
-            }
+                Command command;
+                if (!MessageSerializer.TryCreateFromMessage(message, out command))
+                {
+                    ActorEventSource.Current.CommandDeserializationFailed(message);
+                    return;
+                }
 
-            var information = command as Information;
-            if (information != null)
+                var information = command as Information;
+                if (information != null)
+                {
+                    EnrichInformationMessage(information);
+                }
+
+                ActorEventSource.Current.CommandReceived(Sid, message);
+                await _stateMachine.ProcessCommand(command);
+            }
+            catch (Exception exception)
             {
-                EnrichInformationMessage(information);
+                ActorEventSource.Current.CommandProcessingFailed(Sid, message, exception.ToString());
             }
-
-            ActorEventSource.Current.CommandReceived(Sid, message);
-            await _stateMachine.ProcessCommand(command);
         }
 
         public async Task UpdateInformation(Information message)

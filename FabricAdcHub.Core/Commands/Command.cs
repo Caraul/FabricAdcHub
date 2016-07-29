@@ -36,21 +36,11 @@ namespace FabricAdcHub.Core.Commands
 
         public string ToMessage()
         {
-            var stringBuilder = new StringBuilder();
-            stringBuilder.Append(Header.GetParametersText());
-            var positionalParametersText = GetPositionalParametersText();
-            if (!string.IsNullOrEmpty(positionalParametersText))
-            {
-                stringBuilder.Append($"{MessageSerializer.Separator}{positionalParametersText}");
-            }
-
-            var namedParametersText = NamedFlags.ToText();
-            if (!string.IsNullOrEmpty(namedParametersText))
-            {
-                stringBuilder.Append($"{MessageSerializer.Separator}{namedParametersText}");
-            }
-
-            return $"{Header.Type.Symbol}{Type.ToText()}{MessageSerializer.Separator}{stringBuilder}";
+            return MessageSerializer.BuildText(
+                $"{Header.Type.Symbol}{Type.ToText()}",
+                Header.GetParametersText(),
+                GetPositionalParametersText(),
+                NamedFlags.ToText());
         }
 
         protected virtual string GetPositionalParametersText()

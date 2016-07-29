@@ -26,7 +26,7 @@ namespace FabricAdcHub.User
 
         public void UpdateFromCommand(Information message)
         {
-            Union(message.NamedFlags);
+            UpdateFrom(message.NamedFlags);
             Summarize();
         }
 

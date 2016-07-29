@@ -11,11 +11,11 @@ namespace FabricAdcHub.Core.Commands
         {
         }
 
-        public Supports(MessageHeader header, IEnumerable<string> addFeatures, IEnumerable<string> removeFeatures)
+        public Supports(MessageHeader header, HashSet<string> addFeatures, HashSet<string> removeFeatures)
             : base(header, CommandType.Supports)
         {
-            AddFeatures.Value = new HashSet<string>(addFeatures);
-            RemoveFeatures.Value = new HashSet<string>(removeFeatures);
+            AddFeatures.Value = addFeatures;
+            RemoveFeatures.Value = removeFeatures;
         }
 
         public NamedStrings AddFeatures => GetStrings("AD");

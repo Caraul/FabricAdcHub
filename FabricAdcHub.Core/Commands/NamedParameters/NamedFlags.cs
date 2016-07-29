@@ -47,10 +47,17 @@ namespace FabricAdcHub.Core.Commands.NamedParameters
 
         public void SetFlagValue(string name, HashSet<string> value)
         {
-            Flags[name] = value;
+            if (value == null)
+            {
+                Flags.Remove(name);
+            }
+            else
+            {
+                Flags[name] = value;
+            }
         }
 
-        public void Union(NamedFlags other)
+        public void UpdateFrom(NamedFlags other)
         {
             foreach (var pair in other.Flags)
             {
@@ -60,7 +67,7 @@ namespace FabricAdcHub.Core.Commands.NamedParameters
 
         public void Summarize()
         {
-            var dropped = Flags.Where(pair => !pair.Value.Any()).Select(pair => pair.Key);
+            var dropped = Flags.Where(pair => !pair.Value.Any()).Select(pair => pair.Key).ToList();
             foreach (var key in dropped)
             {
                 Flags.Remove(key);
