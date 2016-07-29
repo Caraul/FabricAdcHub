@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using FabricAdcHub.Core.Commands;
 
 namespace FabricAdcHub.Core.MessageHeaders
 {

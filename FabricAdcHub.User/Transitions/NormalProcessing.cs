@@ -76,8 +76,8 @@ namespace FabricAdcHub.User.Transitions
 
         protected async Task EchoedDirectCommand(Command command)
         {
-            var directMessageType = (DirectMessageHeader)command.Header;
-            var sender = ActorProxy.Create<ISender>(new ActorId(directMessageType.TargetSid));
+            var echoMessageType = (EchoMessageHeader)command.Header;
+            var sender = ActorProxy.Create<ISender>(new ActorId(echoMessageType.TargetSid));
             await sender.SendMessage(command.OriginalMessage);
             await Sender.SendMessage(command.OriginalMessage);
         }
