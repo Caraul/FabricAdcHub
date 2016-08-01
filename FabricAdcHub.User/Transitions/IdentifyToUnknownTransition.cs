@@ -13,11 +13,6 @@ namespace FabricAdcHub.User.Transitions
         {
         }
 
-        public override Task<bool> Guard(StateMachineEvent evt, Command parameter)
-        {
-            return Task.FromResult(true);
-        }
-
         public override async Task Effect(StateMachineEvent evt, Command parameter)
         {
             if (parameter != null)

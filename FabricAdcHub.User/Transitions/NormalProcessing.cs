@@ -21,13 +21,14 @@ namespace FabricAdcHub.User.Transitions
         {
         }
 
-        public override Task<bool> Guard(StateMachineEvent evt, Command parameter)
-        {
-            return Task.FromResult(true);
-        }
-
         public override async Task Effect(StateMachineEvent evt, Command parameter)
         {
+            if (evt.InternalEvent == InternalEvent.ConnectionTimedOut)
+            {
+                // do nothing
+                return;
+            }
+
             if (parameter.Type == CommandType.Information)
             {
                 await User.UpdateInformation((Information)parameter);

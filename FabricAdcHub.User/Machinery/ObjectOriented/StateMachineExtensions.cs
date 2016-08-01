@@ -5,7 +5,7 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
     public static class StateMachineExtensions
     {
         public static IStateBuilder<TState, TEvent, TEventParameter>
-            ConfigureStateAsClass<TState, TEvent, TEventParameter>(
+            ConfigureState<TState, TEvent, TEventParameter>(
                 this StateMachine<TState, TEvent, TEventParameter> stateMachine,
                 StateBase<TState, TEvent, TEventParameter> state)
         {
@@ -15,7 +15,7 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
         }
 
         public static IStateBuilder<TState, TEvent, TEventParameter>
-            ConfigureTransitionAsClass<TState, TEvent, TEventParameter>(
+            ConfigureTransition<TState, TEvent, TEventParameter>(
                 this IStateBuilder<TState, TEvent, TEventParameter> stateBuilder,
                 TransitionBase<TState, TEvent, TEventParameter> transition)
         {
@@ -23,7 +23,7 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
         }
 
         public static IStateBuilder<TState, TEvent, TEventParameter>
-            ConfigureIfChoiceAsClass<TState, TEvent, TEventParameter>(
+            ConfigureIfChoice<TState, TEvent, TEventParameter>(
                 this IStateBuilder<TState, TEvent, TEventParameter> stateBuilder,
                 IfChoiceBase<TState, TEvent, TEventParameter> ifChoice)
         {
@@ -35,7 +35,7 @@ namespace FabricAdcHub.User.Machinery.ObjectOriented
         }
 
         public static IStateBuilder<TState, TEvent, TEventParameter>
-            ConfigureElseTransitionAsClass<TState, TEvent, TEventParameter>(
+            ConfigureElseTransition<TState, TEvent, TEventParameter>(
                 this IStateBuilder<TState, TEvent, TEventParameter> stateBuilder,
                 TransitionBase<TState, TEvent, TEventParameter> transition)
         {

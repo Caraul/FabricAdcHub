@@ -1,4 +1,5 @@
-﻿using FabricAdcHub.Core.Commands;
+﻿using System.Threading.Tasks;
+using FabricAdcHub.Core.Commands;
 using FabricAdcHub.Sender.Interfaces;
 using FabricAdcHub.User.Events;
 using FabricAdcHub.User.Machinery.ObjectOriented;
@@ -15,6 +16,11 @@ namespace FabricAdcHub.User.Transitions
         {
             User = user;
             Sender = ActorProxy.Create<ISender>(new ActorId(user.Sid));
+        }
+
+        public override Task<bool> Guard(StateMachineEvent evt, Command parameter)
+        {
+            return Task.FromResult(true);
         }
 
         protected User User { get; }

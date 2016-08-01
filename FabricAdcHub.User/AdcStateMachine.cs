@@ -23,27 +23,27 @@ namespace FabricAdcHub.User
                 state => user.StateManager.SetStateAsync(StoredState, state));
 
             _stateMachine
-                .ConfigureStateAsClass(_states[AdcProtocolState.Unknown])
+                .ConfigureState(_states[AdcProtocolState.Unknown])
                 .SwitchTo(AdcProtocolState.Protocol, StateMachineEvent.ClientOpened)
                 .ElseSwitchTo(AdcProtocolState.Unknown);
 
             _stateMachine
-                .ConfigureStateAsClass(_states[AdcProtocolState.Protocol])
-                .ConfigureIfChoiceAsClass(new SupportsChoice(user))
-                .ConfigureIfChoiceAsClass(new ProtocolStatusChoice(user))
-                .ConfigureElseTransitionAsClass(new ProtocolToUnknownTransition(user));
+                .ConfigureState(_states[AdcProtocolState.Protocol])
+                .ConfigureIfChoice(new SupportsChoice(user))
+                .ConfigureIfChoice(new ProtocolStatusChoice(user))
+                .ConfigureElseTransition(new ProtocolToUnknownTransition(user));
 
             _stateMachine
-                .ConfigureStateAsClass(_states[AdcProtocolState.Identify])
-                .ConfigureIfChoiceAsClass(new IdentifyInfChoice(user))
-                .ConfigureIfChoiceAsClass(new IdentifyStatusChoice(user))
-                .ConfigureElseTransitionAsClass(new IdentifyToUnknownTransition(user));
+                .ConfigureState(_states[AdcProtocolState.Identify])
+                .ConfigureIfChoice(new IdentifyInfChoice(user))
+                .ConfigureIfChoice(new IdentifyStatusChoice(user))
+                .ConfigureElseTransition(new IdentifyToUnknownTransition(user));
 
             _stateMachine
-                .ConfigureStateAsClass(_states[AdcProtocolState.Normal])
-                .ConfigureTransitionAsClass(new NormalToUnknownTransition(user))
-                .ConfigureIfChoiceAsClass(new NormalStatusChoice(user))
-                .ConfigureElseTransitionAsClass(new NormalProcessing(user));
+                .ConfigureState(_states[AdcProtocolState.Normal])
+                .ConfigureTransition(new NormalToUnknownTransition(user))
+                .ConfigureIfChoice(new NormalStatusChoice(user))
+                .ConfigureElseTransition(new NormalProcessing(user));
         }
 
         public async Task Open()
@@ -56,7 +56,12 @@ namespace FabricAdcHub.User
             await _stateMachine.Fire(new StateMachineEvent(InternalEvent.AdcMessageReceived, command.Type), command);
         }
 
-        public async Task DisconnectOnNetworkError()
+        public async Task ConnectionTimedOut()
+        {
+            await _stateMachine.Fire(StateMachineEvent.ConnectionTimedOut, default(Command));
+        }
+
+        public async Task CloseOnDisconnect()
         {
             await _stateMachine.Fire(StateMachineEvent.DisconnectOccured, default(Command));
         }

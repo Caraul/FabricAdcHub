@@ -15,7 +15,7 @@ using Microsoft.ServiceFabric.Services.Remoting.Client;
 namespace FabricAdcHub.User
 {
     [StatePersistence(StatePersistence.Volatile)]
-    internal class User : Actor, IUser
+    internal class User : Actor, IUser, IRemindable
     {
         public string Sid => Id.GetStringId();
 
@@ -31,6 +31,8 @@ namespace FabricAdcHub.User
             ClientIPv4 = clientIPv4;
             await StateManager.SetStateAsync(StoredIPv6, clientIPv6.ToString());
             ClientIPv6 = clientIPv6;
+
+            await RegisterReminderAsync("connection", null, TimeSpan.FromSeconds(30), TimeSpan.FromMilliseconds(-1));
 
             await _stateMachine.Open();
 
@@ -93,7 +95,13 @@ namespace FabricAdcHub.User
 
         public async Task CloseOnDisconnect()
         {
-            await _stateMachine.DisconnectOnNetworkError();
+            await _stateMachine.CloseOnDisconnect();
+        }
+
+        public async Task ReceiveReminderAsync(string reminderName, byte[] context, TimeSpan dueTime, TimeSpan period)
+        {
+            await _stateMachine.ConnectionTimedOut();
+            await UnregisterReminderAsync(GetReminder(reminderName));
         }
 
         protected override async Task OnActivateAsync()
