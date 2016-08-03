@@ -5,9 +5,6 @@
         Unknown,
         Protocol,
         Identify,
-        Normal,
-        DisconnectedOnShutdown,
-        DisconnectedOnNetworkError,
-        DisconnectedOnProtocolError
+        Normal
     }
 }
