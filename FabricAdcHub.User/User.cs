@@ -17,6 +17,11 @@ namespace FabricAdcHub.User
     [StatePersistence(StatePersistence.Volatile)]
     internal class User : Actor, IUser, IRemindable
     {
+        public User(ActorService actorService, ActorId actorId)
+            : base(actorService, actorId)
+        {
+        }
+
         public string Sid => Id.GetStringId();
 
         public IPAddress ClientIPv4 { get; private set; }

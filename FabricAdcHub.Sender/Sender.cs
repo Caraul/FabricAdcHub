@@ -1,5 +1,6 @@
 ﻿using System.Threading.Tasks;
 using FabricAdcHub.Sender.Interfaces;
+using Microsoft.ServiceFabric.Actors;
 using Microsoft.ServiceFabric.Actors.Runtime;
 
 namespace FabricAdcHub.Sender
@@ -7,6 +8,11 @@ namespace FabricAdcHub.Sender
     [StatePersistence(StatePersistence.None)]
     internal class Sender : Actor, ISender
     {
+        public Sender(ActorService actorService, ActorId actorId)
+            : base(actorService, actorId)
+        {
+        }
+
         public Task SendMessage(string message)
         {
             var events = GetEvent<ISenderEvents>();

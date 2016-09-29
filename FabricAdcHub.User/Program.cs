@@ -11,7 +11,7 @@ namespace FabricAdcHub.User
             try
             {
                 ActorRuntime.RegisterActorAsync<User>(
-                   (context, actorType) => new ActorService(context, actorType, () => new User())).GetAwaiter().GetResult();
+                   (context, actorType) => new ActorService(context, actorType)).GetAwaiter().GetResult();
 
                 Thread.Sleep(Timeout.Infinite);
             }

@@ -42,7 +42,7 @@ namespace FabricAdcHub.Sender
         }
 
         [NonEvent]
-        public void ActorMessage(Actor actor, string message, params object[] args)
+        public void ActorMessage(ActorBase actor, string message, params object[] args)
         {
             if (IsEnabled() && actor.Id != null && actor.ActorService?.Context?.CodePackageActivationContext != null)
             {

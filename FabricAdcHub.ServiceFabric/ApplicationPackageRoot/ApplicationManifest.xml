@@ -1,6 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="FabricAdcHub.ServiceFabricType" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric">
   <Parameters>
+    <Parameter Name="Frontend_InstanceCount" DefaultValue="-1" />
     <Parameter Name="Catalog_MinReplicaSetSize" DefaultValue="2" />
     <Parameter Name="Catalog_PartitionCount" DefaultValue="1" />
     <Parameter Name="Catalog_TargetReplicaSetSize" DefaultValue="3" />
@@ -12,6 +13,10 @@
     <Parameter Name="SenderActorService_MinReplicaSetSize" DefaultValue="1" />
     <Parameter Name="SenderActorService_TargetReplicaSetSize" DefaultValue="1" />
   </Parameters>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="FabricAdcHub.FrontendPkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides />
+  </ServiceManifestImport>
   <ServiceManifestImport>
     <ServiceManifestRef ServiceManifestName="FabricAdcHub.SenderPkg" ServiceManifestVersion="1.0.0" />
   </ServiceManifestImport>
@@ -27,6 +32,11 @@
     <ServiceManifestRef ServiceManifestName="FabricAdcHub.UserPkg" ServiceManifestVersion="1.0.0" />
   </ServiceManifestImport>
   <DefaultServices>
+    <Service Name="Frontend">
+      <StatelessService ServiceTypeName="FrontendType" InstanceCount="[Frontend_InstanceCount]">
+        <SingletonPartition />
+      </StatelessService>
+    </Service>
     <Service Name="Catalog">
       <StatefulService ServiceTypeName="CatalogType" TargetReplicaSetSize="[Catalog_TargetReplicaSetSize]" MinReplicaSetSize="[Catalog_MinReplicaSetSize]">
         <SingletonPartition />
